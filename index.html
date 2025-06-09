@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer</title>
+    <title>3D OBJ Viewer v1.0</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -22,14 +22,14 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Camera position
-        camera.position.set(0, 5, 10);
+        // Camera position (moved closer for larger view)
+        camera.position.set(0, 3, 6);
         camera.lookAt(0, 0, 0);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        // Lighting (increased intensity for brightness)
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.0); // Increased intensity
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased intensity
         directionalLight.position.set(1, 1, 1);
         scene.add(directionalLight);
 
@@ -59,6 +59,8 @@
             const objLoader = new THREE.OBJLoader();
             objLoader.setMaterials(materials);
             objLoader.load('3DModel.obj', (object) => {
+                // Scale the object to make it appear larger
+                object.scale.set(1.5, 1.5, 1.5); // 1.5x size
                 scene.add(object);
                 // Center the model
                 const box = new THREE.Box3().setFromObject(object);
