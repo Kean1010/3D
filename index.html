@@ -4,33 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>3D Model Viewer with Grid</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAB5JREFUOE9jYKAxYGRgYGA4c+YMhjNnzvznz5//BQAoewY3Y/2C/gAAAABJRU5ErkJggg==">
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/OBJLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/MTLLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
-    <script>
+    <script type="module">
+        import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r169/three.module.min.js';
+        import { OBJLoader } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r169/OBJLoader.min.js';
+        import { MTLLoader } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r169/MTLLoader.min.js';
+        import { OrbitControls } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r169/OrbitControls.min.js';
+
         // Set up the scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // Optimize for high-DPI mobile displays
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
         // Add orbit controls with touch support
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
-        controls.screenSpacePanning = true; // Allow panning for mobile
+        controls.screenSpacePanning = true;
         controls.maxPolarAngle = Math.PI / 2;
-        controls.enableZoom = true; // Enable pinch-to-zoom
-        controls.enablePan = true; // Enable touch panning
+        controls.enableZoom = true;
+        controls.enablePan = true;
 
         // Add lighting
         const ambientLight = new THREE.AmbientLight(0x404040);
@@ -41,16 +43,16 @@
 
         // Add wireframe grid (20x20 units, 20 divisions, gray color)
         const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x888888);
-        gridHelper.position.y = -1; // Place grid slightly below the model
+        gridHelper.position.y = -1;
         scene.add(gridHelper);
 
         // Load the MTL and OBJ files
-        const mtlLoader = new THREE.MTLLoader();
-        mtlLoader.load('3DModel.mtl', (materials) => {
+        const mtlLoader = new MTLLoader();
+        mtlLoader.load('./3DModel.mtl', (materials) => {
             materials.preload();
-            const objLoader = new THREE.OBJLoader();
+            const objLoader = new OBJLoader();
             objLoader.setMaterials(materials);
-            objLoader.load('3DModel.obj', (object) => {
+            objLoader.load('./3DModel.obj', (object) => {
                 scene.add(object);
                 // Center and scale the model
                 const box = new THREE.Box3().setFromObject(object);
@@ -60,7 +62,7 @@
                 const scale = 10.0 / maxDim;
                 object.scale.set(scale, scale, scale);
                 object.position.sub(center.multiplyScalar(scale));
-                camera.position.set(0, maxDim * scale, maxDim * scale * 2); // Adjust camera for better mobile view
+                camera.position.set(0, maxDim * scale, maxDim * scale * 2);
             }, undefined, (error) => {
                 console.error('An error occurred loading the OBJ file:', error);
             });
@@ -68,7 +70,7 @@
             console.error('An error occurred loading the MTL file:', error);
         });
 
-        // Handle window resize for responsive design
+        // Handle window resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
