@@ -3,13 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.2</title>
+    <title>3D OBJ Viewer v1.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        canvas {
+            display: block;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body>
+    <div id="info">
+        <p class="font-bold">3D Model Viewer</p>
+        <p>Rotate: Left-click + drag</p>
+        <p>Pan: Right-click + drag</p>
+        <p>Zoom: Scroll</p>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
@@ -18,18 +43,18 @@
         // Scene setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Camera position (moved closer)
+        // Camera position
         camera.position.set(0, 1, 1);
         camera.lookAt(0, 0, 0);
 
-        // Lighting (increased intensity)
-        const ambientLight = new THREE.AmbientLight(0x404040, 2.0); // Increased to 2.0
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2.0);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // Increased to 2.0
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
         directionalLight.position.set(1, 1, 1);
         scene.add(directionalLight);
 
@@ -46,7 +71,7 @@
             objLoader.setMaterials(materials);
             objLoader.load('3DModel.obj', (object) => {
                 // Scale the object to make it appear larger
-                object.scale.set(1.5, 1.5, 1.5); // 1.5x size
+                object.scale.set(1.5, 1.5, 1.5);
                 scene.add(object);
                 // Center the model
                 const box = new THREE.Box3().setFromObject(object);
