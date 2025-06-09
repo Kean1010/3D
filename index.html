@@ -35,12 +35,12 @@
       scene.add(ambientLight);
 
       const mtlLoader = new MTLLoader();
-      mtlLoader.load('model.mtl', (materials) => {
+      mtlLoader.load('3DModel.mtl', (materials) => {
         materials.preload();
 
         const objLoader = new OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.load('model.obj', (object) => {
+        objLoader.load('3DModel.obj', (object) => {
           object.scale.set(1, 1, 1);
           object.position.y = 0;
           scene.add(object);
