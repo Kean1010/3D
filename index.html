@@ -3,16 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.3</title>
+    <title>3D OBJ Viewer v1.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #canvas-container {
+            width: 90vw;
+            max-width: 800px;
+            border: 2px solid #4b5e8e;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            background: #ffffff10;
         }
         canvas {
             display: block;
+            width: 100% !important;
+            height: auto !important;
         }
         #info {
             position: absolute;
@@ -26,14 +41,26 @@
             font-size: 14px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
+        @media (max-width: 600px) {
+            #info {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            #canvas-container {
+                width: 95vw;
+            }
+        }
     </style>
 </head>
 <body>
+    <div id="canvas-container">
+        <canvas id="viewer-canvas"></canvas>
+    </div>
     <div id="info">
-        <p class="font-bold">3D Model Viewer</p>
-        <p>Rotate: Left-click + drag</p>
-        <p>Pan: Right-click + drag</p>
-        <p>Zoom: Scroll</p>
+        <p class="font-bold">3D Model Viewer (Mobile)</p>
+        <p>Rotate: Swipe with one finger</p>
+        <p>Pan: Swipe with two fingers</p>
+        <p>Zoom: Pinch to zoom</p>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
@@ -43,9 +70,9 @@
         // Scene setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('viewer-canvas') });
+        renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         // Camera position
         camera.position.set(0, 1, 1);
@@ -86,9 +113,12 @@
 
         // Handle window resize
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(width, height);
         });
 
         // Animation loop
