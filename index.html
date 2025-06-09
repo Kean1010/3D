@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.0</title>
+    <title>3D OBJ Viewer</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -22,14 +22,14 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Camera position (moved closer for larger view)
-        camera.position.set(0, 3, 6);
+        // Camera position (moved closer)
+        camera.position.set(0, 3, 4);
         camera.lookAt(0, 0, 0);
 
-        // Lighting (increased intensity for brightness)
-        const ambientLight = new THREE.AmbientLight(0x404040, 1.0); // Increased intensity
+        // Lighting (increased intensity)
+        const ambientLight = new THREE.AmbientLight(0x404040, 2.0); // Increased to 2.0
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased intensity
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // Increased to 2.0
         directionalLight.position.set(1, 1, 1);
         scene.add(directionalLight);
 
@@ -37,20 +37,6 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-
-        // Add wireframe grid planes
-        const gridSize = 10;
-        const gridDivisions = 10;
-        const gridHelperXY = new THREE.GridHelper(gridSize, gridDivisions, 0x888888, 0x888888);
-        gridHelperXY.rotation.x = Math.PI / 2; // XY plane
-        scene.add(gridHelperXY);
-
-        const gridHelperXZ = new THREE.GridHelper(gridSize, gridDivisions, 0x888888, 0x888888); // XZ plane
-        scene.add(gridHelperXZ);
-
-        const gridHelperYZ = new THREE.GridHelper(gridSize, gridDivisions, 0x888888, 0x888888); // YZ plane
-        gridHelperYZ.rotation.z = Math.PI / 2;
-        scene.add(gridHelperYZ);
 
         // Load MTL and OBJ
         const mtlLoader = new THREE.MTLLoader();
