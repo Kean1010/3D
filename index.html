@@ -1,109 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Model Viewer with Grid</title>
-    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAB5JREFUOE9jYKAxYGRgYGA4c+YMhjNnzvznz5//BQAoewY3Y/2C/gAAAABJRU5ErkJggg==">
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-        #error { position: absolute; top: 10px; left: 10px; color: red; font-family: Arial; font-size: 16px; background: rgba(255, 255, 255, 0.8); padding: 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>3D Model Viewer</title>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+  </style>
 </head>
 <body>
-    <div id="error"></div>
-    <script type="module">
-        try {
-            import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js?v=169';
-            import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/OBJLoader.js?v=169';
-            import { MTLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/MTLLoader.js?v=169';
-            import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js?v=169';
+  <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/loaders/MTLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/loaders/OBJLoader.js"></script>
 
-            // Set up error display
-            const errorDiv = document.getElementById('error');
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-            // Set up the scene, camera, and renderer
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            document.body.appendChild(renderer.domElement);
+    // Light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
 
-            // Add orbit controls with touch support
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.25;
-            controls.screenSpacePanning = true;
-            controls.maxPolarAngle = Math.PI / 2;
-            controls.enableZoom = true;
-            controls.enablePan = true;
+    // Load MTL and OBJ
+    const mtlLoader = new THREE.MTLLoader();
+    mtlLoader.setResourcePath('https://raw.githubusercontent.com/yourusername/yourrepo/main/');
+    mtlLoader.setPath('https://raw.githubusercontent.com/yourusername/yourrepo/main/');
+    mtlLoader.load('3DModel.mtl', function(materials) {
+      materials.preload();
 
-            // Add lighting
-            const ambientLight = new THREE.AmbientLight(0x404040);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(0, 1, 1);
-            scene.add(directionalLight);
+      const objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials(materials);
+      objLoader.setPath('https://raw.githubusercontent.com/yourusername/yourrepo/main/');
+      objLoader.load('3DModel.obj', function(object) {
+        scene.add(object);
+        object.position.set(0, 0, 0);
+        camera.position.z = 5;
+        animate();
+      });
+    });
 
-            // Add wireframe grid (20x20 units, 20 divisions, gray color)
-            const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x888888);
-            gridHelper.position.y = -1;
-            scene.add(gridHelper);
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
 
-            // Fallback cube if model fails to load
-            const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
-            const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-            const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            scene.add(cube);
-
-            // Load the MTL and OBJ files
-            const mtlLoader = new MTLLoader();
-            mtlLoader.load('/3D/3DModel.mtl', (materials) => {
-                materials.preload();
-                const objLoader = new OBJLoader();
-                objLoader.setMaterials(materials);
-                objLoader.load('/3D/3DModel.obj', (object) => {
-                    scene.remove(cube); // Remove fallback cube
-                    scene.add(object);
-                    // Center and scale the model
-                    const box = new THREE.Box3().setFromObject(object);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 10.0 / maxDim;
-                    object.scale.set(scale, scale, scale);
-                    object.position.sub(center.multiplyScalar(scale));
-                    camera.position.set(0, maxDim * scale, maxDim * scale * 2);
-                }, undefined, (error) => {
-                    errorDiv.textContent = 'Error loading OBJ file: ' + error.message;
-                    console.error('An error occurred loading the OBJ file:', error);
-                });
-            }, undefined, (error) => {
-                errorDiv.textContent = 'Error loading MTL file: ' + error.message;
-                console.error('An error occurred loading the MTL file:', error);
-            });
-
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(window.devicePixelRatio);
-            });
-
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-                controls.update();
-                renderer.render(scene, camera);
-            }
-            animate();
-        } catch (e) {
-            document.getElementById('error').textContent = 'Module loading error: ' + e.message;
-            console.error('Module loading error:', e);
-        }
-    </script>
+    // Responsive
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
