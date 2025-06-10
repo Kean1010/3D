@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.8</title>
+    <title>3D OBJ Viewer v1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -116,10 +116,10 @@
         <p>Zoom: Pinch to zoom</p>
     </div>
     <div id="model-selector">
-        <div class="model-card" data-model="3DModel" data-image="thumb1.jpg">
+        <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg">
             <img src="thumb1.jpg" alt="Model 1">
         </div>
-        <div class="model-card" data-model="3DModel2" data-image="thumb2.jpg">
+        <div class="model-card" data-folder="assets/model2" data-model="3DModel" data-image="thumb2.jpg">
             <img src="thumb2.jpg" alt="Model 2">
         </div>
     </div>
@@ -157,7 +157,7 @@
         let currentObject = null;
 
         // Load model function
-        function loadModel(modelName) {
+        function loadModel(folder, modelName) {
             spinner.style.display = 'block';
             if (currentObject) {
                 scene.remove(currentObject);
@@ -165,38 +165,56 @@
             }
 
             const mtlLoader = new THREE.MTLLoader();
-            mtlLoader.load(`${modelName}.mtl`, (materials) => {
-                materials.preload();
-                const objLoader = new THREE.OBJLoader();
-                objLoader.setMaterials(materials);
-                objLoader.load(`${modelName}.obj`, (object) => {
-                    object.scale.set(1.5, 1.5, 1.5);
-                    const box = new THREE.Box3().setFromObject(object);
-                    const center = box.getCenter(new THREE.Vector3());
-                    object.position.sub(center);
-                    scene.add(object);
-                    currentObject = object;
+            mtlLoader.setResourcePath(`${folder}/`); // Set texture path
+            mtlLoader.load(
+                `${folder}/${modelName}.mtl`,
+                (materials) => {
+                    materials.preload();
+                    console.log(`MTL loaded for ${folder}/${modelName}, materials:`, materials);
+                    const objLoader = new THREE.OBJLoader();
+                    objLoader.setMaterials(materials);
+                    objLoader.load(
+                        `${folder}/${modelName}.obj`,
+                        (object) => {
+                            object.scale.set(1.5, 1.5, 1.5);
+                            const box = new THREE.Box3().setFromObject(object);
+                            const center = box.getCenter(new THREE.Vector3());
+                            object.position.sub(center);
+                            scene.add(object);
+                            currentObject = object;
+                            spinner.style.display = 'none';
+                            console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
+                        },
+                        (progress) => {
+                            console.log(`OBJ loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                        },
+                        (error) => {
+                            console.error(`Error loading ${folder}/${modelName}.obj:`, error);
+                            spinner.style.display = 'none';
+                        }
+                    );
+                },
+                (progress) => {
+                    console.log(`MTL loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                },
+                (error) => {
+                    console.error(`Error loading ${folder}/${modelName}.mtl:`, error);
                     spinner.style.display = 'none';
-                }, undefined, (error) => {
-                    console.error(`Error loading ${modelName}.obj:`, error);
-                    spinner.style.display = 'none';
-                });
-            }, undefined, (error) => {
-                console.error(`Error loading ${modelName}.mtl:`, error);
-                spinner.style.display = 'none';
-            });
+                }
+            );
         }
 
         // Model selector
         document.querySelectorAll('.model-card').forEach(card => {
             card.addEventListener('click', () => {
+                const folder = card.getAttribute('data-folder');
                 const modelName = card.getAttribute('data-model');
-                loadModel(modelName);
+                loadModel(folder, modelName);
             });
         });
 
         // Load initial model
-        loadModel('3DModel');
+        loadModel('assets/model1', '3DModel');
 
         // Handle window resize
         window.addEventListener('resize', () => {
