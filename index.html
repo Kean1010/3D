@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.6</title>
+    <title>3D OBJ Viewer v1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -17,19 +17,21 @@
             font-family: 'Inter', sans-serif;
         }
         #canvas-container {
-            width: 90vw;
-            max-width: 800px;
+            width: 95vw;
+            height: 70vh; /* Increased height for portrait mobile screens */
+            max-width: 1000px; /* Slightly increased max-width for flexibility */
             border: 2px solid #4b5e8e;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             background: #ffffff10;
             position: relative;
+            margin-top: 20px; /* Small margin to avoid sticking to top */
         }
         canvas {
             display: block;
             width: 100% !important;
-            height: auto !important;
+            height: 100% !important; /* Ensure canvas fills container */
         }
         #info {
             position: absolute;
@@ -48,10 +50,11 @@
             gap: 16px;
             flex-wrap: wrap;
             justify-content: center;
+            padding-bottom: 20px;
         }
         .model-card {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             background: #ffffff10;
             border: 2px solid #4b5e8e;
             border-radius: 8px;
@@ -91,11 +94,12 @@
                 padding: 8px 12px;
             }
             #canvas-container {
-                width: 95vw;
+                width: 98vw; /* Nearly full width for mobile */
+                height: 65vh; /* Adjusted for mobile portrait */
             }
             .model-card {
-                width: 100px;
-                height: 100px;
+                width: 80px;
+                height: 80px;
             }
         }
     </style>
