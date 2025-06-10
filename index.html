@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.7</title>
+    <title>3D OBJ Viewer v1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -52,24 +52,6 @@
             border-radius: 8px;
             font-size: 14px;
             text-align: center;
-        }
-        #controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        #controls select {
-            padding: 8px 12px;
-            background: #4b5e8e;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        #controls select:hover {
-            background: #60a5fa;
         }
         #model-selector {
             margin-top: 20px;
@@ -128,10 +110,6 @@
                 width: 80px;
                 height: 80px;
             }
-            #controls select {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
         }
     </style>
 </head>
@@ -147,13 +125,6 @@
         <p>Zoom: Pinch to zoom</p>
     </div>
     <div id="model-info"></div>
-    <div id="controls">
-        <select id="lighting-select">
-            <option value="default">Default Lighting</option>
-            <option value="bright">Bright Lighting</option>
-            <option value="dramatic">Dramatic Lighting</option>
-        </select>
-    </div>
     <div id="model-selector">
         <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg" data-name="Model 1" data-desc="A classic 3D sculpture">
             <img src="thumb1.jpg" alt="Model 1">
@@ -193,20 +164,18 @@
 
         // Model info and state
         const modelInfo = document.getElementById('model-info');
-        const lightingSelect = document.getElementById('lighting-select');
         let currentObject = null;
         const spinner = document.getElementById('loading-spinner');
-        let additionalLights = [];
 
         // Model metadata
         const modelData = {
             'assets/model1/3DModel': {
-                name: 'Model 1',
-                desc: 'A classic 3D sculpture'
+                name: 'Kean's Power Bank',
+                desc: 'A 10000mAH power bank enough to juice up your phone from 0 to 100%'
             },
             'assets/model2/3DModel': {
-                name: 'Model 2',
-                desc: 'A modern 3D artifact'
+                name: 'Deadpool sculpture',
+                desc: 'A 3D printed Deadpool sculpture from the movie'
             }
         };
 
@@ -260,28 +229,6 @@
                 }
             );
         }
-
-        // Lighting selector
-        lightingSelect.addEventListener('change', (e) => {
-            // Remove existing additional lights
-            additionalLights.forEach(light => scene.remove(light));
-            additionalLights = [];
-
-            const value = e.target.value;
-            if (value === 'bright') {
-                const pointLight = new THREE.PointLight(0xffffff, 3.0, 100);
-                pointLight.position.set(0, 2, 2);
-                scene.add(pointLight);
-                additionalLights.push(pointLight);
-            } else if (value === 'dramatic') {
-                const spotLight = new THREE.SpotLight(0xffffff, 4.0, 100, Math.PI / 4, 0.5);
-                spotLight.position.set(2, 2, 2);
-                spotLight.target.position.set(0, 0, 0);
-                scene.add(spotLight);
-                scene.add(spotLight.target);
-                additionalLights.push(spotLight);
-            }
-        });
 
         // Model selector
         document.querySelectorAll('.model-card').forEach(card => {
