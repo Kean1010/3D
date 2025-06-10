@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.4</title>
+    <title>3D OBJ Viewer v1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            font-family: 'Inter', sans-serif;
         }
         #canvas-container {
             width: 90vw;
@@ -23,6 +24,7 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             background: #ffffff10;
+            position: relative;
         }
         canvas {
             display: block;
@@ -37,9 +39,51 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 15px;
             border-radius: 8px;
-            font-family: 'Inter', sans-serif;
             font-size: 14px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #model-selector {
+            margin-top: 20px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .model-card {
+            width: 120px;
+            height: 120px;
+            background: #ffffff10;
+            border: 2px solid #4b5e8e;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .model-card:hover {
+            transform: scale(1.05);
+            border-color: #60a5fa;
+        }
+        .model-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #60a5fa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
         @media (max-width: 600px) {
             #info {
@@ -49,18 +93,31 @@
             #canvas-container {
                 width: 95vw;
             }
+            .model-card {
+                width: 100px;
+                height: 100px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="canvas-container">
         <canvas id="viewer-canvas"></canvas>
+        <div id="loading-spinner"></div>
     </div>
     <div id="info">
         <p class="font-bold">3D Model Viewer (Mobile)</p>
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
+    </div>
+    <div id="model-selector">
+        <div class="model-card" data-model="3DModel" data-image="3DModel.jpg">
+            <img src="3DModel.jpg" alt="Model 1">
+        </div>
+        <div class="model-card" data-model="3DModel2" data-image="3DModel2.jpg">
+            <img src="3DModel2.jpg" alt="Model 2">
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
@@ -71,8 +128,9 @@
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('viewer-canvas') });
-        renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        const container = document.getElementById('canvas-container');
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
 
         // Camera position
         camera.position.set(0, 1, 1);
@@ -90,30 +148,54 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Load MTL and OBJ
-        const mtlLoader = new THREE.MTLLoader();
-        mtlLoader.load('3DModel.mtl', (materials) => {
-            materials.preload();
-            const objLoader = new THREE.OBJLoader();
-            objLoader.setMaterials(materials);
-            objLoader.load('3DModel.obj', (object) => {
-                // Scale the object to make it appear larger
-                object.scale.set(1.5, 1.5, 1.5);
-                scene.add(object);
-                // Center the model
-                const box = new THREE.Box3().setFromObject(object);
-                const center = box.getCenter(new THREE.Vector3());
-                object.position.sub(center);
+        // Loading spinner
+        const spinner = document.getElementById('loading-spinner');
+        let currentObject = null;
+
+        // Load model function
+        function loadModel(modelName) {
+            spinner.style.display = 'block';
+            if (currentObject) {
+                scene.remove(currentObject);
+                currentObject = null;
+            }
+
+            const mtlLoader = new THREE.MTLLoader();
+            mtlLoader.load(`${modelName}.mtl`, (materials) => {
+                materials.preload();
+                const objLoader = new THREE.OBJLoader();
+                objLoader.setMaterials(materials);
+                objLoader.load(`${modelName}.obj`, (object) => {
+                    object.scale.set(1.5, 1.5, 1.5);
+                    const box = new THREE.Box3().setFromObject(object);
+                    const center = box.getCenter(new THREE.Vector3());
+                    object.position.sub(center);
+                    scene.add(object);
+                    currentObject = object;
+                    spinner.style.display = 'none';
+                }, undefined, (error) => {
+                    console.error(`Error loading ${modelName}.obj:`, error);
+                    spinner.style.display = 'none';
+                });
             }, undefined, (error) => {
-                console.error('Error loading OBJ:', error);
+                console.error(`Error loading ${modelName}.mtl:`, error);
+                spinner.style.display = 'none';
             });
-        }, undefined, (error) => {
-            console.error('Error loading MTL:', error);
+        }
+
+        // Model selector
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const modelName = card.getAttribute('data-model');
+                loadModel(modelName);
+            });
         });
+
+        // Load initial model
+        loadModel('3DModel');
 
         // Handle window resize
         window.addEventListener('resize', () => {
-            const container = document.getElementById('canvas-container');
             const width = container.clientWidth;
             const height = container.clientHeight;
             camera.aspect = width / height;
@@ -131,8 +213,3 @@
     </script>
 </body>
 </html>
-
-This is my 3d object viewer
-I want to enhance it by adding a loading spinner.
-I also want to add the 2nd 3D object in as well.
-Both this model and the 2nd one i am loading in (the files will be name 3DModel2.obj, 3DModel2.mtl and 3DModel2.jpg) will be on a placeholder below the 3d viewer screen. when i want to view the model, i click and it will load in the main frame.
