@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.5</title>
+    <title>3D OBJ Viewer v1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -18,20 +18,20 @@
         }
         #canvas-container {
             width: 95vw;
-            height: 70vh; /* Increased height for portrait mobile screens */
-            max-width: 1000px; /* Slightly increased max-width for flexibility */
+            height: 70vh;
+            max-width: 1000px;
             border: 2px solid #4b5e8e;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             background: #ffffff10;
             position: relative;
-            margin-top: 20px; /* Small margin to avoid sticking to top */
+            margin-top: 20px;
         }
         canvas {
             display: block;
             width: 100% !important;
-            height: 100% !important; /* Ensure canvas fills container */
+            height: 100% !important;
         }
         #info {
             position: absolute;
@@ -94,8 +94,8 @@
                 padding: 8px 12px;
             }
             #canvas-container {
-                width: 98vw; /* Nearly full width for mobile */
-                height: 65vh; /* Adjusted for mobile portrait */
+                width: 98vw;
+                height: 65vh;
             }
             .model-card {
                 width: 80px;
@@ -116,11 +116,11 @@
         <p>Zoom: Pinch to zoom</p>
     </div>
     <div id="model-selector">
-        <div class="model-card" data-model="3DModel" data-image="3DModel.jpg">
-            <img src="3DModel.jpg" alt="Model 1">
+        <div class="model-card" data-model="3DModel" data-image="thumb1.jpg">
+            <img src="thumb1.jpg" alt="Model 1">
         </div>
-        <div class="model-card" data-model="3DModel2" data-image="3DModel2.jpg">
-            <img src="3DModel2.jpg" alt="Model 2">
+        <div class="model-card" data-model="3DModel2" data-image="thumb2.jpg">
+            <img src="thumb2.jpg" alt="Model 2">
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
