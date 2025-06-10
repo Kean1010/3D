@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D OBJ Viewer v1.5</title>
+    <title>3D OBJ Viewer v1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -43,6 +43,33 @@
             border-radius: 8px;
             font-size: 14px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #model-info {
+            margin-top: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        #controls select {
+            padding: 8px 12px;
+            background: #4b5e8e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #controls select:hover {
+            background: #60a5fa;
         }
         #model-selector {
             margin-top: 20px;
@@ -89,7 +116,7 @@
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
         @media (max-width: 600px) {
-            #info {
+            #info, #model-info {
                 font-size: 12px;
                 padding: 8px 12px;
             }
@@ -100,6 +127,10 @@
             .model-card {
                 width: 80px;
                 height: 80px;
+            }
+            #controls select {
+                padding: 6px 10px;
+                font-size: 12px;
             }
         }
     </style>
@@ -115,11 +146,19 @@
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
     </div>
+    <div id="model-info"></div>
+    <div id="controls">
+        <select id="lighting-select">
+            <option value="default">Default Lighting</option>
+            <option value="bright">Bright Lighting</option>
+            <option value="dramatic">Dramatic Lighting</option>
+        </select>
+    </div>
     <div id="model-selector">
-        <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg">
+        <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg" data-name="Model 1" data-desc="A classic 3D sculpture">
             <img src="thumb1.jpg" alt="Model 1">
         </div>
-        <div class="model-card" data-folder="assets/model2" data-model="3DModel" data-image="thumb2.jpg">
+        <div class="model-card" data-folder="assets/model2" data-model="3DModel" data-image="thumb2.jpg" data-name="Model 2" data-desc="A modern 3D artifact">
             <img src="thumb2.jpg" alt="Model 2">
         </div>
     </div>
@@ -152,9 +191,24 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Loading spinner
-        const spinner = document.getElementById('loading-spinner');
+        // Model info and state
+        const modelInfo = document.getElementById('model-info');
+        const lightingSelect = document.getElementById('lighting-select');
         let currentObject = null;
+        const spinner = document.getElementById('loading-spinner');
+        let additionalLights = [];
+
+        // Model metadata
+        const modelData = {
+            'assets/model1/3DModel': {
+                name: 'Model 1',
+                desc: 'A classic 3D sculpture'
+            },
+            'assets/model2/3DModel': {
+                name: 'Model 2',
+                desc: 'A modern 3D artifact'
+            }
+        };
 
         // Load model function
         function loadModel(folder, modelName) {
@@ -165,12 +219,12 @@
             }
 
             const mtlLoader = new THREE.MTLLoader();
-            mtlLoader.setResourcePath(`${folder}/`); // Set texture path
+            mtlLoader.setResourcePath(`${folder}/`);
             mtlLoader.load(
                 `${folder}/${modelName}.mtl`,
                 (materials) => {
                     materials.preload();
-                    console.log(`MTL loaded for ${folder}/${modelName}, materials:`, materials);
+                    console.log(`MTL loaded for ${folder}/${modelName}:`, materials);
                     const objLoader = new THREE.OBJLoader();
                     objLoader.setMaterials(materials);
                     objLoader.load(
@@ -183,6 +237,9 @@
                             scene.add(object);
                             currentObject = object;
                             spinner.style.display = 'none';
+                            // Update model info
+                            const key = `${folder}/${modelName}`;
+                            modelInfo.innerHTML = `<p class="font-bold">${modelData[key].name}</p><p>${modelData[key].desc}</p>`;
                             console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
                         },
                         (progress) => {
@@ -203,6 +260,28 @@
                 }
             );
         }
+
+        // Lighting selector
+        lightingSelect.addEventListener('change', (e) => {
+            // Remove existing additional lights
+            additionalLights.forEach(light => scene.remove(light));
+            additionalLights = [];
+
+            const value = e.target.value;
+            if (value === 'bright') {
+                const pointLight = new THREE.PointLight(0xffffff, 3.0, 100);
+                pointLight.position.set(0, 2, 2);
+                scene.add(pointLight);
+                additionalLights.push(pointLight);
+            } else if (value === 'dramatic') {
+                const spotLight = new THREE.SpotLight(0xffffff, 4.0, 100, Math.PI / 4, 0.5);
+                spotLight.position.set(2, 2, 2);
+                spotLight.target.position.set(0, 0, 0);
+                scene.add(spotLight);
+                scene.add(spotLight.target);
+                additionalLights.push(spotLight);
+            }
+        });
 
         // Model selector
         document.querySelectorAll('.model-card').forEach(card => {
