@@ -1,121 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Singapore Chicken Rice Showcase</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chicken Rice 3D — Story Tour</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* --- keep your original look + caption overlay --- */
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #fafafa;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
+    #canvas-container {
+      width: 95vw;
+      height: 70vh;
+      max-width: 1000px;
+      border: 2px solid #4b5e8e;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
       overflow: hidden;
-    }
-
-    #viewer-container {
-      flex: 1;
+      background: #ffffff10;
       position: relative;
-      background-color: #fff;
+      margin-top: 20px;
     }
-
-    model-viewer {
-      width: 100%;
-      height: 100%;
-      background-color: #fff;
+    canvas { display:block; width:100% !important; height:100% !important; }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      z-index: 30;
     }
+    #model-info {
+      margin-top: 10px;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 30;
+    }
+    #loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #60a5fa;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      display: none;
+      z-index: 40;
+    }
+    @keyframes spin { 0%{transform:translate(-50%,-50%) rotate(0)} 100%{transform:translate(-50%,-50%) rotate(360deg)} }
 
-    /* Caption box overlay */
+    /* Caption overlay (slightly below 3D model inside same container) */
     #caption-box {
       position: absolute;
-      bottom: 10px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 90%;
-      background: rgba(255, 255, 255, 0.85);
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      line-height: 1.4em;
-      box-shadow: 0px 2px 8px rgba(0,0,0,0.2);
+      width: calc(100% - 40px);
+      max-width: 920px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1.45;
       text-align: center;
+      z-index: 35;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      display: none; /* shown when tour starts */
+    }
+    #caption-title { font-weight: 700; margin-bottom: 6px; }
+    #caption-controls { margin-top: 8px; display:flex; gap:8px; justify-content:center; align-items:center; }
+
+    /* small overlay when browser blocks autoplay */
+    #audio-permission {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      background: rgba(2,6,23,0.95);
+      color: white;
+      padding: 14px 18px;
+      border-radius: 10px;
+      z-index: 60;
+      display: none;
+      text-align:center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+    .btn {
+      background: #60a5fa;
+      color: #06202a;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
     }
 
-    #caption-title {
-      font-weight: bold;
-      margin-bottom: 6px;
+    @media (max-width:600px) {
+      #caption-box { font-size: 13px; padding:10px; bottom: 8px; }
+      #canvas-container { height: 65vh; width:98vw; }
     }
   </style>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <div id="viewer-container">
-    <!-- 3D model -->
-    <model-viewer 
-      id="model" 
-      src="chickenrice.glb" 
-      alt="Singapore Chicken Rice" 
-      camera-controls 
-      auto-rotate 
-      rotation-per-second="15deg"
-      exposure="1"
-      shadow-intensity="1">
-    </model-viewer>
+  <div id="canvas-container">
+    <canvas id="viewer-canvas"></canvas>
+    <div id="loading-spinner"></div>
 
-    <!-- Caption overlay -->
-    <div id="caption-box">
+    <div id="info">
+      <p class="font-bold">3D Model Viewer (Mobile)</p>
+      <p>Rotate: Swipe with one finger</p>
+      <p>Pan: Swipe with two fingers</p>
+      <p>Zoom: Pinch to zoom</p>
+    </div>
+    <div id="model-info">Chicken Rice — Tap here to replay the captions</div>
+
+    <!-- captions overlay (below model, non-blocking) -->
+    <div id="caption-box" role="region" aria-live="polite">
       <div id="caption-title"></div>
       <div id="caption-text"></div>
+      <div id="caption-controls">
+        <button id="prev-btn" class="btn" style="background:#94a3b8;color:#021">Prev</button>
+        <button id="play-pause-btn" class="btn">Pause</button>
+        <button id="next-btn" class="btn" style="background:#94a3b8;color:#021">Next</button>
+      </div>
+    </div>
+
+    <!-- shown if autoplay blocked; user taps to enable audio -->
+    <div id="audio-permission">
+      <div style="margin-bottom:8px;">Tap to enable audio for the guided story</div>
+      <button id="enable-audio-btn" class="btn">Tap to Start Audio</button>
     </div>
   </div>
 
+  <!-- background music (optional) -->
+  <!-- Put the bg music file at assets/music/bg.mp3 -->
+  <audio id="bg-music" src="assets/music/bg.mp3" loop preload="auto"></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script>
-    // Story data: title, text, audio
-    const storySections = [
-      {
-        title: "Origins",
-        text: "Hainanese chicken rice originated from Chinese immigrants from Hainan, China. The dish was adapted in Singapore using local ingredients and techniques, making it lighter and more fragrant.",
-        audio: "origins.mp3"
-      },
-      {
-        title: "Evolution in Singapore",
-        text: "Over the decades, Singapore's version evolved into a national dish. Poached or roasted chicken is served with fragrant rice cooked in chicken stock, accompanied by chili sauce and ginger paste.",
-        audio: "evolution.mp3"
-      },
-      {
-        title: "Cultural Significance",
-        text: "Chicken rice is more than a meal — it is part of Singapore's cultural identity, enjoyed in hawker centres and restaurants alike, symbolizing comfort and tradition.",
-        audio: "cultural.mp3"
+    // ---------- scene setup (from your original) ----------
+    const container = document.getElementById('canvas-container');
+    const canvas = document.getElementById('viewer-canvas');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, canvas, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 1, 1);
+    camera.lookAt(0, 0, 0);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2); keyLight.position.set(2,2,2); scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6); fillLight.position.set(-2,1,2); scene.add(fillLight);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4); rimLight.position.set(0,2,-2); scene.add(rimLight);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    const spinner = document.getElementById('loading-spinner');
+    const modelInfo = document.getElementById('model-info');
+
+    // ---------- single model metadata (using your original filename) ----------
+    // model located at: assets/model1/3DModel.mtl + 3DModel.obj
+    const modelKey = 'assets/model1/3DModel';
+    const modelData = {
+      [modelKey]: {
+        name: 'Chicken Rice (Showcase)',
+        desc: 'Click to replay the three-part guided story.',
+        // story sections (sequence)
+        sections: [
+          {
+            id: 'origins',
+            title: 'Origins — From Hainan to Singapore',
+            text: `Hainanese chicken rice traces its roots to southern China’s Hainan province, where it is known as Wenchang chicken.
+The dish came with Hainanese immigrants to Singapore in the late 19th and early 20th centuries. Traditionally the chicken is gently poached to keep it tender, then served with rice cooked in the poaching broth.`,
+            audio: 'assets/story/origins.mp3'
+          },
+          {
+            id: 'evolution',
+            title: 'Evolution in Singapore',
+            text: `In Singapore, the fragrant rice is cooked with chicken stock, garlic, ginger and pandan leaves.
+A bright chili sauce — with fresh chilies, garlic, ginger and lime — became the local signature.
+From hawker stalls to hotels, many variations exist.`,
+            audio: 'assets/story/evolution.mp3'
+          },
+          {
+            id: 'significance',
+            title: 'Cultural Significance',
+            text: `Today chicken rice is celebrated as one of Singapore’s unofficial national dishes: affordable, comforting and found across hawker centres and restaurants.
+It represents Singapore’s multicultural culinary heritage.`,
+            audio: 'assets/story/significance.mp3'
+          }
+        ]
       }
-    ];
+    };
 
-    const captionTitle = document.getElementById("caption-title");
-    const captionText = document.getElementById("caption-text");
+    // ---------- load single model (OBJ + MTL) ----------
+    let currentObject = null;
+    function loadModel(folder, modelName) {
+      spinner.style.display = 'block';
+      if (currentObject) {
+        scene.remove(currentObject);
+        currentObject = null;
+      }
 
-    let currentSection = 0;
+      const mtlLoader = new THREE.MTLLoader();
+      mtlLoader.setResourcePath(folder + '/');
+      mtlLoader.load(`${folder}/${modelName}.mtl`,
+        (materials) => {
+          materials.preload();
+          const objLoader = new THREE.OBJLoader();
+          objLoader.setMaterials(materials);
+          objLoader.load(`${folder}/${modelName}.obj`,
+            (object) => {
+              // scale & center similar to your original
+              object.scale.set(1.5, 1.5, 1.5);
+              const box = new THREE.Box3().setFromObject(object);
+              const center = box.getCenter(new THREE.Vector3());
+              object.position.sub(center);
+              scene.add(object);
+              currentObject = object;
+              spinner.style.display = 'none';
 
+              // update model-info
+              modelInfo.innerHTML = `<p class="font-bold">${modelData[modelKey].name}</p><p>${modelData[modelKey].desc}</p>`;
+
+              // start the auto tour (captions + audio sequence)
+              startTourAuto();
+            },
+            (progress) => {
+              // optional: progress logging
+            },
+            (error) => {
+              console.error('Error loading OBJ:', error);
+              spinner.style.display = 'none';
+            }
+          );
+        },
+        (progress) => {},
+        (error) => {
+          console.error('Error loading MTL:', error);
+          spinner.style.display = 'none';
+        }
+      );
+    }
+
+    // ---------- caption & audio sequence logic ----------
+    const captionBox = document.getElementById('caption-box');
+    const captionTitle = document.getElementById('caption-title');
+    const captionText = document.getElementById('caption-text');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const audioPermission = document.getElementById('audio-permission');
+    const enableAudioBtn = document.getElementById('enable-audio-btn');
+    const bgMusic = document.getElementById('bg-music');
+
+    let currentIndex = 0;
+    let currentAudio = null;
+    let isPaused = false;
+    let autoplayBlocked = false;
+
+    function showCaptionBox() {
+      captionBox.style.display = 'block';
+    }
+    function hideCaptionBox() {
+      captionBox.style.display = 'none';
+    }
+
+    // Play a specific section by index (with auto-next)
     function playSection(index) {
-      if (index >= storySections.length) return;
-      const section = storySections[index];
-      captionTitle.textContent = section.title;
-      captionText.textContent = section.text;
+      const sections = modelData[modelKey].sections;
+      if (index < 0) index = 0;
+      if (index >= sections.length) {
+        // finished sequence: keep last caption or hide
+        currentIndex = sections.length - 1;
+        updateCaption(currentIndex);
+        return;
+      }
+      currentIndex = index;
+      const section = sections[index];
+      updateCaption(index);
 
-      const audio = new Audio(section.audio);
-      audio.play();
+      // stop previous audio
+      if (currentAudio) {
+        try { currentAudio.pause(); } catch(e) {}
+        currentAudio = null;
+      }
 
-      audio.onended = () => {
+      // create audio
+      currentAudio = new Audio(section.audio);
+      currentAudio.preload = 'auto';
+      currentAudio.volume = 1.0;
+
+      // ensure bgMusic plays (if user allowed)
+      try { if (bgMusic && bgMusic.paused === false) { /* ok */ } } catch(e) {}
+
+      const playPromise = currentAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          // playing succeeded
+          isPaused = false;
+          updatePlayPauseBtn();
+          autoplayBlocked = false;
+          audioPermission.style.display = 'none';
+        }).catch((err) => {
+          // autoplay blocked by browser
+          console.warn('Autoplay blocked:', err);
+          autoplayBlocked = true;
+          // show permission overlay
+          audioPermission.style.display = 'block';
+        });
+      }
+
+      // when ended -> next
+      currentAudio.onended = () => {
         playSection(index + 1);
       };
     }
 
-    // Start playing automatically after short delay (so model loads)
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        playSection(0);
-      }, 1000);
+    function updateCaption(index) {
+      const s = modelData[modelKey].sections[index];
+      captionTitle.textContent = s.title;
+      captionText.textContent = s.text;
+    }
+
+    function pauseCurrent() {
+      if (currentAudio && !currentAudio.paused) {
+        currentAudio.pause();
+        isPaused = true;
+      } else {
+        if (currentAudio) {
+          currentAudio.play().catch(()=>{});
+          isPaused = false;
+        }
+      }
+      updatePlayPauseBtn();
+    }
+
+    function updatePlayPauseBtn() {
+      playPauseBtn.textContent = isPaused ? 'Play' : 'Pause';
+    }
+
+    prevBtn.addEventListener('click', () => {
+      playSection(Math.max(0, currentIndex - 1));
     });
+    nextBtn.addEventListener('click', () => {
+      playSection(Math.min(modelData[modelKey].sections.length - 1, currentIndex + 1));
+    });
+    playPauseBtn.addEventListener('click', () => {
+      if (!currentAudio) {
+        // start from current index
+        playSection(currentIndex);
+        return;
+      }
+      if (isPaused) {
+        currentAudio.play().then(()=>{ isPaused=false; updatePlayPauseBtn(); }).catch(()=>{});
+      } else {
+        currentAudio.pause();
+        isPaused = true;
+        updatePlayPauseBtn();
+      }
+    });
+
+    // If autoplay blocked, user taps to enable audio -> start the sequence & bg music
+    enableAudioBtn.addEventListener('click', () => {
+      audioPermission.style.display = 'none';
+      // try to start bg music
+      if (bgMusic) {
+        bgMusic.volume = 0.25;
+        bgMusic.play().catch(()=>{});
+      }
+      // resume current audio or start at currentIndex
+      if (currentAudio) {
+        currentAudio.play().catch(()=>{});
+      } else {
+        playSection(currentIndex);
+      }
+    });
+
+    // clicking model-info replays the whole tour
+    modelInfo.addEventListener('click', () => {
+      playSection(0);
+      showCaptionBox();
+    });
+
+    // Try to play bg music on first user gesture (browsers block autoplay silently)
+    document.body.addEventListener('click', () => {
+      if (bgMusic) {
+        bgMusic.volume = 0.25;
+        bgMusic.play().catch(()=>{});
+      }
+    }, { once: true });
+
+    // ---------- startTourAuto: show captions and attempt to autoplay sequence ----------
+    function startTourAuto() {
+      showCaptionBox();
+      currentIndex = 0;
+      playSection(0);
+    }
+
+    // ---------- window resizing & animation loop ----------
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ---------- initial model load using the original filename (3DModel) ----------
+    loadModel('assets/model1', '3DModel');
   </script>
 </body>
 </html>
