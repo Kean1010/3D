@@ -88,7 +88,7 @@
 
     // Load FBX model
     const loader = new THREE.FBXLoader();
-    loader.load('Hainanese_Chicken_Rice.fbx', function(fbx) {
+    loader.load('chicken.fbx', function(fbx) {
       fbx.scale.set(0.02, 0.02, 0.02);  // Adjust scale as needed
       scene.add(fbx);
     }, undefined, function(error) {
