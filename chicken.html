@@ -1,159 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Singapore Chicken Rice 3D Showcase (FBX)</title>
-  <style>
-    html, body {
-      margin: 0; padding: 0; overflow: hidden; height: 100%; background: #f8f8f8;
-      font-family: Arial, sans-serif;
-    }
-    #container {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-    #storyPanel {
-      position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      max-width: 900px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      padding: 15px 25px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      line-height: 1.4em;
-      text-align: center;
-      pointer-events: none; /* let 3D controls work */
-      opacity: 1;
-      transition: opacity 1s ease-in-out;
-      user-select: none;
-      box-sizing: border-box;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Singapore Chicken Rice 3D Showcase (FBX)</title>
+<style>
+  html, body {
+    margin:0; padding:0; height:100%; overflow:hidden; background:#f8f8f8;
+    font-family: Arial, sans-serif;
+  }
+  #container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  #storyPanel {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 900px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 1.2em;
+    line-height: 1.4em;
+    text-align: center;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+    user-select: none;
+    box-sizing: border-box;
+  }
+  #startOverlay {
+    position: fixed;
+    top:0; left:0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    font-size: 1.8em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 9999;
+    user-select: none;
+    text-align: center;
+    padding: 20px;
+  }
+</style>
 </head>
 <body>
-  <div id="container"></div>
-  <div id="storyPanel"></div>
 
-  <!-- Three.js and FBXLoader -->
+<div id="container"></div>
+<div id="storyPanel"></div>
 
+<div id="startOverlay">Click anywhere to start the story</div>
+
+<!-- Three.js and FBXLoader (r128 versions for non-module usage) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
+<script>
+  const stories = [
+    {
+      text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
+      audio: "audio1.mp3"
+    },
+    {
+      text: "Evolution in Singapore: Over the decades, chicken rice became a national icon. Hawkers developed their own styles, perfecting fragrant rice cooked in chicken broth and tender poached chicken served with chili sauce.",
+      audio: "audio2.mp3"
+    },
+    {
+      text: "Cultural Significance: Today, chicken rice is more than food — it is a comfort dish, a symbol of Singapore's multicultural identity, and a must-try for visitors from around the world.",
+      audio: "audio3.mp3"
+    }
+  ];
 
-  
-  <script>
-    const stories = [
-      {
-        text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
-        audio: "audio1.mp3"
-      },
-      {
-        text: "Evolution in Singapore: Over the decades, chicken rice became a national icon. Hawkers developed their own styles, perfecting fragrant rice cooked in chicken broth and tender poached chicken served with chili sauce.",
-        audio: "audio2.mp3"
-      },
-      {
-        text: "Cultural Significance: Today, chicken rice is more than food — it is a comfort dish, a symbol of Singapore's multicultural identity, and a must-try for visitors from around the world.",
-        audio: "audio3.mp3"
-      }
-    ];
+  const container = document.getElementById('container');
+  const storyPanel = document.getElementById('storyPanel');
+  const overlay = document.getElementById('startOverlay');
 
-    const container = document.getElementById('container');
-    const storyPanel = document.getElementById('storyPanel');
+  // Three.js scene setup
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({antialias: true});
+  // Lights
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+  scene.add(hemiLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(5, 10, 7.5);
+  scene.add(dirLight);
+
+  // Controls
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+
+  // Load FBX model
+  const loader = new THREE.FBXLoader();
+  loader.load('chicken.fbx', function(fbx) {
+    fbx.scale.set(0.02, 0.02, 0.02); // Adjust scale if needed
+    scene.add(fbx);
+  }, undefined, function(error) {
+    console.error('Error loading FBX:', error);
+  });
+
+  camera.position.set(0, 1.5, 3);
+
+  // Window resize
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    container.appendChild(renderer.domElement);
+  });
 
-    // Lights
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    scene.add(hemiLight);
+  // Story playback with fade
+  let currentIndex = 0;
+  let audio = null;
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(5, 10, 7.5);
-    scene.add(dirLight);
+  function fadeOutText(callback) {
+    storyPanel.style.opacity = 0;
+    setTimeout(callback, 1000);
+  }
 
-    // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+  function fadeInText(text) {
+    storyPanel.innerText = text;
+    storyPanel.style.opacity = 1;
+  }
 
-    // Load FBX model
-    const loader = new THREE.FBXLoader();
-    loader.load('chicken.fbx', function(fbx) {
-      fbx.scale.set(0.02, 0.02, 0.02);  // Adjust scale as needed
-      scene.add(fbx);
-    }, undefined, function(error) {
-      console.error('Error loading FBX:', error);
-    });
-
-    camera.position.set(0, 1.5, 3);
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // Audio & Story sequence with fade effect on captions
-    let currentIndex = 0;
-    let audio = null;
-
-    function fadeOutText(callback) {
-      storyPanel.style.opacity = 0;
-      setTimeout(callback, 1000);
+  function playStory(index) {
+    if(index >= stories.length) {
+      // Optionally loop or do nothing
+      return;
     }
-
-    function fadeInText(text) {
-      storyPanel.innerText = text;
-      storyPanel.style.opacity = 1;
-    }
-
-    function playStory(index) {
-      if (index >= stories.length) {
-        // End of story, you could loop or stop
-        return;
+    fadeOutText(() => {
+      fadeInText(stories[index].text);
+      if(audio) {
+        audio.pause();
+        audio = null;
       }
-      fadeOutText(() => {
-        fadeInText(stories[index].text);
-        if (audio) {
-          audio.pause();
-          audio = null;
-        }
-        audio = new Audio(stories[index].audio);
-        audio.play();
-        audio.onended = () => {
-          playStory(index + 1);
-        };
-      });
-    }
-
-    // Start automatically on page load
-    window.addEventListener('load', () => {
-      fadeInText(stories[0].text);
-      audio = new Audio(stories[0].audio);
+      audio = new Audio(stories[index].audio);
       audio.play();
       audio.onended = () => {
-        playStory(1);
+        playStory(index + 1);
       };
     });
+  }
 
-    // Render loop
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-  </script>
+  // Start playback only after user interaction
+  overlay.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    playStory(0);
+  });
+
+  // Render loop
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+</script>
+
 </body>
 </html>
