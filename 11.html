@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBX Model Viewer with OBJ Export</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #fileInput { position: absolute; top: 10px; left: 10px; }
+        #materialSelectContainer { position: absolute; top: 50px; left: 10px; }
+        #exportButton { position: absolute; top: 10px; left: 200px; }
+        .material-select { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <input type="file" id="fbxInput" accept=".fbx" />
+    <input type="file" id="textureInput" accept=".jpg,.jpeg,.png" multiple />
+    <button id="exportButton" disabled>Export as OBJ</button>
+    <div id="materialSelectContainer"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.0/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/exporters/OBJExporter.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // Camera position
+        camera.position.z = 5;
+
+        // Orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // File input handling
+        const fbxInput = document.getElementById('fbxInput');
+        const textureInput = document.getElementById('textureInput');
+        const exportButton = document.getElementById('exportButton');
+        const materialSelectContainer = document.getElementById('materialSelectContainer');
+        let currentModel = null;
+        let textures = []; // Store loaded textures
+        let materials = []; // Store model materials
+
+        fbxInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const arrayBuffer = e.target.result;
+                    const loader = new THREE.FBXLoader();
+                    loader.load(URL.createObjectURL(new Blob([arrayBuffer])), (object) => {
+                        // Remove previous model if exists
+                        if (currentModel) {
+                            scene.remove(currentModel);
+                        }
+                        currentModel = object;
+                        scene.add(object);
+
+                        // Center and scale model
+                        const box = new THREE.Box3().setFromObject(object);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = 2.0 / maxDim;
+                        object.scale.set(scale, scale, scale);
+                        object.position.sub(center.multiplyScalar(scale));
+
+                        // Collect materials
+                        materials = [];
+                        object.traverse((child) => {
+                            if (child.isMesh && child.material) {
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(mat => {
+                                        if (!materials.includes(mat)) materials.push(mat);
+                                    });
+                                } else if (!materials.includes(child.material)) {
+                                    materials.push(child.material);
+                                }
+                            }
+                        });
+
+                        // Apply textures if already loaded
+                        if (textures.length > 0) {
+                            applyTexturesToMaterials();
+                        }
+
+                        // Update material selection UI
+                        updateMaterialSelectUI();
+
+                        // Enable export button if model is loaded
+                        exportButton.disabled = !currentModel;
+                    }, undefined, (error) => {
+                        console.error('Error loading FBX file:', error);
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        textureInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            textures = []; // Clear previous textures
+
+            Array.from(files).forEach((file) => {
+                if (!file.name) return; // Skip invalid files
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const textureLoader = new THREE.TextureLoader();
+                    try {
+                        const texture = textureLoader.load(e.target.result, undefined, undefined, (err) => {
+                            console.error(`Failed to load texture ${file.name}:`, err);
+                        });
+                        texture.flipY = false; // FBX textures often need this
+                        textures.push({ name: file.name, texture: texture, originalDataURL: e.target.result });
+
+                        // Apply textures if model is loaded
+                        if (currentModel) {
+                            applyTexturesToMaterials();
+                            updateMaterialSelectUI();
+                        }
+                    } catch (err) {
+                        console.error(`Error processing texture ${file.name}:`, err);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Automatically apply textures to materials based on name matching
+        function applyTexturesToMaterials() {
+            if (!currentModel || textures.length === 0) return;
+
+            materials.forEach((material, index) => {
+                // Find a texture that matches the material name (case-insensitive)
+                const materialName = material.name ? material.name.toLowerCase() : '';
+                const matchedTexture = textures.find(tex => 
+                    tex.name && (
+                        tex.name.toLowerCase().includes(materialName) || 
+                        materialName.includes(tex.name.toLowerCase().replace(/\.[^/.]+$/, ''))
+                    )
+                );
+
+                if (matchedTexture) {
+                    material.map = matchedTexture.texture;
+                    material.needsUpdate = true;
+                }
+            });
+        }
+
+        // Update UI for manual texture assignment
+        function updateMaterialSelectUI() {
+            materialSelectContainer.innerHTML = ''; // Clear previous UI
+            materials.forEach((material, index) => {
+                const div = document.createElement('div');
+                div.className = 'material-select';
+                const label = document.createElement('label');
+                label.textContent = `Material: ${material.name || 'Material ' + index}`;
+                const select = document.createElement('select');
+                select.dataset.materialIndex = index;
+                select.innerHTML = '<option value="">No Texture</option>';
+                textures.forEach((tex, texIndex) => {
+                    if (!tex.name) return; // Skip invalid textures
+                    const option = document.createElement('option');
+                    option.value = texIndex;
+                    option.text = tex.name;
+                    select.appendChild(option);
+                    // Preselect if texture matches material
+                    if (material.map === tex.texture) {
+                        select.value = texIndex;
+                    }
+                });
+                select.addEventListener('change', () => {
+                    const texIndex = select.value;
+                    if (texIndex !== '') {
+                        material.map = textures[texIndex].texture;
+                        material.needsUpdate = true;
+                    } else {
+                        material.map = null;
+                        material.needsUpdate = true;
+                    }
+                });
+                div.appendChild(label);
+                div.appendChild(select);
+                materialSelectContainer.appendChild(div);
+            });
+        }
+
+        // Generate a simple MTL file
+        function generateMTLFile() {
+            let mtlContent = '# MTL File generated by Three.js\n';
+            materials.forEach((material, index) => {
+                const matName = material.name || `Material_${index}`;
+                mtlContent += `newmtl ${matName}\n`;
+                mtlContent += `Ka 1.0 1.0 1.0\n`; // Ambient color
+                mtlContent += `Kd 1.0 1.0 1.0\n`; // Diffuse color
+                mtlContent += `Ks 0.0 0.0 0.0\n`; // Specular color
+                mtlContent += `Ns 10.0\n`; // Shininess
+                if (material.map) {
+                    const texture = textures.find(tex => tex.texture === material.map);
+                    if (texture && texture.name) {
+                        mtlContent += `map_Kd ${texture.name}\n`; // Diffuse texture
+                    }
+                }
+                mtlContent += '\n';
+            });
+            return mtlContent;
+        }
+
+        // Export OBJ, MTL, and textures
+        exportButton.addEventListener('click', () => {
+            if (!currentModel) {
+                alert('No model loaded to export.');
+                return;
+            }
+
+            // Generate and download MTL
+            const mtlData = generateMTLFile();
+            const mtlBlob = new Blob([mtlData], { type: 'text/plain' });
+            const mtlLink = document.createElement('a');
+            mtlLink.href = URL.createObjectURL(mtlBlob);
+            mtlLink.download = 'model.mtl';
+            mtlLink.click();
+
+            // Export OBJ
+            const objExporter = new THREE.OBJExporter();
+            const objData = objExporter.parse(currentModel);
+            const objBlob = new Blob([objData], { type: 'text/plain' });
+            const objLink = document.createElement('a');
+            objLink.href = URL.createObjectURL(objBlob);
+            objLink.download = 'model.obj';
+            objLink.click();
+
+            // Download textures
+            textures.forEach((tex) => {
+                if (!tex.name || !tex.originalDataURL) return; // Skip invalid textures
+                try {
+                    const byteString = atob(tex.originalDataURL.split(',')[1]);
+                    const mimeString = tex.originalDataURL.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    const textureBlob = new Blob([ab], { type: mimeString });
+                    const textureLink = document.createElement('a');
+                    textureLink.href = URL.createObjectURL(textureBlob);
+                    textureLink.download = tex.name;
+                    textureLink.click();
+                } catch (err) {
+                    console.error(`Error exporting texture ${tex.name}:`, err);
+                }
+            });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
