@@ -1,221 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Singapore Chicken Rice 3D Showcase (OBJ)</title>
-<style>
-  html, body {
-    margin:0; padding:0; height:100%; overflow:hidden; background:#f8f8f8;
-    font-family: Arial, sans-serif;
-  }
-  #container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  #storyPanel {
-    position: absolute;
-    bottom: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 900px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 15px 25px;
-    border-radius: 10px;
-    font-size: 1.2em;
-    line-height: 1.4em;
-    text-align: center;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 1s ease-in-out;
-    user-select: none;
-    box-sizing: border-box;
-  }
-  #startOverlay {
-    position: fixed;
-    top:0; left:0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    color: white;
-    font-size: 1.8em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 9999;
-    user-select: none;
-    text-align: center;
-    padding: 20px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singapore Chicken Rice 3D Showcase v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        #canvas-container {
+            width: 95vw;
+            height: 70vh;
+            max-width: 1000px;
+            border: 2px solid #4b5e8e;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            background: #ffffff10;
+            position: relative;
+            margin-top: 20px;
+        }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #model-info {
+            margin-top: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+        #model-selector {
+            margin-top: 20px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding-bottom: 20px;
+        }
+        .model-card {
+            width: 100px;
+            height: 100px;
+            background: #ffffff10;
+            border: 2px solid #4b5e8e;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .model-card:hover {
+            transform: scale(1.05);
+            border-color: #60a5fa;
+        }
+        .model-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #60a5fa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        #storyPanel {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.4em;
+            text-align: center;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #startOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 9999;
+            text-align: center;
+            padding: 20px;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            #info, #model-info, #storyPanel {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            #canvas-container {
+                width: 98vw;
+                height: 65vh;
+            }
+            .model-card {
+                width: 80px;
+                height: 80px;
+            }
+            #startOverlay {
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<div id="container"></div>
-<div id="storyPanel"></div>
-
-<div id="startOverlay">Click anywhere to start the story</div>
-
-<!-- Three.js, OBJLoader, MTLLoader, OrbitControls (UMD versions) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r165/three.min.js"></script>
-<!-- Fallback local copy of Three.js (download and place in assets/) -->
-<script>if (typeof THREE === 'undefined') { document.write('<script src="assets/three.min.js"><\/script>'); }</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/OBJLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/MTLLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js"></script>
-
-<script>
-  // Check if THREE is defined
-  if (typeof THREE === 'undefined') {
-    console.error('Three.js failed to load. Check the network or CDN availability.');
-    alert('Failed to load Three.js. Please check your internet connection or use a local copy.');
-  } else {
-    console.log('Three.js loaded successfully:', THREE.REVISION);
-  }
-
-  const stories = [
-    {
-      text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
-      audio: "assets/story/origins.mp3"
-    },
-    {
-      text: "Evolution in Singapore: Over the decades, chicken rice became a national icon. Hawkers developed their own styles, perfecting fragrant rice cooked in chicken broth and tender poached chicken served with chili sauce.",
-      audio: "assets/story/evolution.mp3"
-    },
-    {
-      text: "Cultural Significance: Today, chicken rice is more than food — it is a comfort dish, a symbol of Singapore's multicultural identity, and a must-try for visitors from around the world.",
-      audio: "assets/story/cultural.mp3"
-    }
-  ];
-
-  const container = document.getElementById('container');
-  const storyPanel = document.getElementById('storyPanel');
-  const overlay = document.getElementById('startOverlay');
-
-  // Three.js scene setup
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-  const renderer = new THREE.WebGLRenderer({antialias: true});
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  container.appendChild(renderer.domElement);
-
-  // Lights
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-  scene.add(hemiLight);
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(5, 10, 7.5);
-  scene.add(dirLight);
-
-  // Controls
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-
-  // Load MTL and OBJ
-  const mtlLoader = new THREE.MTLLoader();
-  mtlLoader.setPath('assets/model1/'); // Set path for MTL and textures
-  mtlLoader.load(
-    '3DModel.mtl',
-    function(materials) {
-      materials.preload(); // Preload materials
-      const objLoader = new THREE.OBJLoader();
-      objLoader.setMaterials(materials); // Apply materials to OBJ
-      objLoader.setPath('assets/model1/'); // Set path for OBJ
-      objLoader.load(
-        '3DModel.obj',
-        function(obj) {
-          obj.scale.set(0.02, 0.02, 0.02); // Adjust scale
-          obj.traverse(function(child) {
-            if (child.isMesh) {
-              console.log('Material:', child.material); // Debug material
-              if (child.material.map) {
-                console.log('Texture:', child.material.map.image.src); // Debug texture
-              } else {
-                // Fallback: Manually assign texture if not loaded
-                const textureLoader = new THREE.TextureLoader();
-                child.material.map = textureLoader.load('assets/model1/3DModel.jpg');
-                child.material.needsUpdate = true;
-              }
-            }
-          });
-          scene.add(obj);
-        },
-        function(xhr) {
-          console.log((xhr.loaded / xhr.total * 100) + '% OBJ loaded'); // Progress feedback
-        },
-        function(error) {
-          console.error('Error loading OBJ:', error); // Error handling
+    <div id="canvas-container">
+        <canvas id="viewer-canvas"></canvas>
+        <div id="loading-spinner"></div>
+        <div id="storyPanel"></div>
+        <div id="startOverlay">Click anywhere to start the story</div>
+    </div>
+    <div id="info">
+        <p class="font-bold">3D Model Viewer (Mobile)</p>
+        <p>Rotate: Swipe with one finger</p>
+        <p>Pan: Swipe with two fingers</p>
+        <p>Zoom: Pinch to zoom</p>
+    </div>
+    <div id="model-info"></div>
+    <div id="model-selector">
+        <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg" data-name="Model 1" data-desc="A classic 3D sculpture">
+            <img src="thumb1.jpg" alt="Model 1">
+        </div>
+        <div class="model-card" data-folder="assets/model2" data-model="3DModel" data-image="thumb2.jpg" data-name="Model 2" data-desc="A modern 3D artifact">
+            <img src="thumb2.jpg" alt="Model 2">
+        </div>
+        <div class="model-card" data-folder="assets/model3" data-model="3DModel" data-image="thumb3.jpg" data-name="Model 3" data-desc="A modern 3D artifact">
+            <img src="thumb3.jpg" alt="Model 3">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Check if THREE is defined
+        if (typeof THREE === 'undefined') {
+            console.error('Three.js failed to load. Check the network or CDN availability.');
+            alert('Failed to load Three.js. Please check your internet connection.');
+        } else {
+            console.log('Three.js loaded successfully:', THREE.REVISION);
         }
-      );
-    },
-    function(xhr) {
-      console.log((xhr.loaded / xhr.total * 100) + '% MTL loaded'); // Progress feedback
-    },
-    function(error) {
-      console.error('Error loading MTL:', error); // Error handling
-    }
-  );
 
-  camera.position.set(0, 1.5, 3);
+        // Story data
+        const stories = [
+            {
+                text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
+                audio: "assets/story/origins.mp3"
+            },
+            {
+                text: "Evolution in Singapore: Over the decades, chicken rice became a national icon. Hawkers developed their own styles, perfecting fragrant rice cooked in chicken broth and tender poached chicken served with chili sauce.",
+                audio: "assets/story/evolution.mp3"
+            },
+            {
+                text: "Cultural Significance: Today, chicken rice is more than food — it is a comfort dish, a symbol of Singapore's multicultural identity, and a must-try for visitors from around the world.",
+                audio: "assets/story/cultural.mp3"
+            }
+        ];
 
-  // Window resize
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('viewer-canvas') });
+        const container = document.getElementById('canvas-container');
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
 
-  // Story playback with fade
-  let currentIndex = 0;
-  let audio = null;
+        // Camera position
+        camera.position.set(0, 1, 1);
+        camera.lookAt(0, 0, 0);
 
-  function fadeOutText(callback) {
-    storyPanel.style.opacity = 0;
-    setTimeout(callback, 1000);
-  }
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(ambientLight);
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        keyLight.position.set(2, 2, 2);
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        fillLight.position.set(-2, 1, 2);
+        scene.add(fillLight);
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        rimLight.position.set(0, 2, -2);
+        scene.add(rimLight);
 
-  function fadeInText(text) {
-    storyPanel.innerText = text;
-    storyPanel.style.opacity = 1;
-  }
+        // Orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
 
-  function playStory(index) {
-    if(index >= stories.length) {
-      return; // Stop after last story
-    }
-    fadeOutText(() => {
-      fadeInText(stories[index].text);
-      if(audio) {
-        audio.pause();
-        audio = null;
-      }
-      audio = new Audio(stories[index].audio);
-      audio.play().-catch(err => {
-        console.warn('Audio play prevented:', err);
- U     });
-      audio.onended = () => {
-        playigyStory(index + 1);
-      };
-    });
-  }
+        // Model info and state
+        const modelInfo = document.getElementById('model-info');
+        const storyPanel = document.getElementById('storyPanel');
+        const overlay = document.getElementById('startOverlay');
+        let currentObject = null;
+        const spinner = document.getElementById('loading-spinner');
+        let audio = null;
+        let currentIndex = 0;
 
-  // Start playback only after user interaction
-  overlay.addEventListener('click', () => {
-    overlay.style.display = 'none';
-    playStory(0);
-  });
+        // Model metadata
+        const modelData = {
+            'assets/model1/3DModel': {
+                name: 'Power Bank',
+                desc: 'Not your usual Bank but a 10,000mAH Power Bank that juice up your device from 0 to 100%'
+            },
+            'assets/model2/3DModel': {
+                name: 'DeadPool',
+                desc: 'A Deadpool Sculpture from the movie DeadPool'
+            },
+            'assets/model3/3DModel': {
+                name: 'Spiderman',
+                desc: 'A Spiderman Sculpture from the movie Spiderman'
+            }
+        };
 
-  // Render loop
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
-</script>
+        // Load model function
+        function loadModel(folder, modelName) {
+            spinner.style.display = 'block';
+            if (currentObject) {
+                scene.remove(currentObject);
+                currentObject = null;
+            }
 
+            const mtlLoader = new THREE.MTLLoader();
+            mtlLoader.setResourcePath(`${folder}/`);
+            mtlLoader.load(
+                `${folder}/${modelName}.mtl`,
+                (materials) => {
+                    materials.preload();
+                    console.log(`MTL loaded for ${folder}/${modelName}:`, materials);
+                    const objLoader = new THREE.OBJLoader();
+                    objLoader.setMaterials(materials);
+                    objLoader.load(
+                        `${folder}/${modelName}.obj`,
+                        (object) => {
+                            object.scale.set(1.5, 1.5, 1.5);
+                            const box = new THREE.Box3().setFromObject(object);
+                            const center = box.getCenter(new THREE.Vector3());
+                            object.position.sub(center);
+                            scene.add(object);
+                            currentObject = object;
+                            spinner.style.display = 'none';
+                            const key = `${folder}/${modelName}`;
+                            modelInfo.innerHTML = `<p class="font-bold">${modelData[key].name}</p><p>${modelData[key].desc}</p>`;
+                            console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
+                        },
+                        (progress) => {
+                            console.log(`OBJ loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                        },
+                        (error) => {
+                            console.error(`Error loading ${folder}/${modelName}.obj:`, error);
+                            spinner.style.display = 'none';
+                        }
+                    );
+                },
+                (progress) => {
+                    console.log(`MTL loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                },
+                (error) => {
+                    console.error(`Error loading ${folder}/${modelName}.mtl:`, error);
+                    spinner.style.display = 'none';
+                }
+            );
+        }
+
+        // Story playback functions
+        function fadeOutText(callback) {
+            storyPanel.style.opacity = 0;
+            setTimeout(callback, 1000);
+        }
+
+        function fadeInText(text) {
+            storyPanel.innerText = text;
+            storyPanel.style.opacity = 1;
+        }
+
+        function playStory(index) {
+            if (index >= stories.length) {
+                storyPanel.style.opacity = 0; // Hide panel after last story
+                return;
+            }
+            fadeOutText(() => {
+                fadeInText(stories[index].text);
+                if (audio) {
+                    audio.pause();
+                    audio = null;
+                }
+                audio = new Audio(stories[index].audio);
+                audio.play().catch(err => {
+                    console.warn('Audio play prevented:', err);
+                });
+                audio.onended = () => {
+                    playStory(index + 1);
+                };
+            });
+        }
+
+        // Start story on overlay click
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            playStory(0);
+        });
+
+        // Model selector
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const folder = card.getAttribute('data-folder');
+                const modelName = card.getAttribute('data-model');
+                loadModel(folder, modelName);
+            });
+        });
+
+        // Load initial model
+        loadModel('assets/model1', '3DModel');
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
 </body>
 </html>
