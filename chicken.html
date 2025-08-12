@@ -320,13 +320,25 @@
             );
         }
 
-        // Model selector
-        document.querySelectorAll('.model-card').forEach(card => {
-            card.addEventListener('click', () => {
+        // Model selector setup
+        const modelCards = document.querySelectorAll('.model-card');
+        function enableModelSelectors() {
+            modelCards.forEach(card => {
                 const folder = card.getAttribute('data-folder');
                 const modelName = card.getAttribute('data-model');
-                loadModel(folder, modelName);
+                card.addEventListener('click', () => {
+                    loadModel(folder, modelName);
+                });
+                // Restore cursor and hover effect
+                card.style.cursor = 'pointer';
+                card.classList.add('model-card'); // Ensure hover styles are applied
             });
+        }
+
+        // Initially disable model selectors
+        modelCards.forEach(card => {
+            card.style.cursor = 'not-allowed';
+            card.classList.remove('model-card'); // Remove hover effect
         });
 
         // Start story on overlay click
@@ -345,6 +357,8 @@
                 storyPanel.innerText = "Story not available.";
                 storyPanel.style.opacity = 1;
             }
+            // Enable model selectors after overlay is clicked
+            enableModelSelectors();
         });
 
         // Load initial model
