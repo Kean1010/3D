@@ -42,7 +42,7 @@
             padding: 10px 15px;
             border-radius: 8px;
             font-size: 14px;
-            box-shadow: 0-motif: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
         #model-info {
             margin-top: 10px;
@@ -192,16 +192,16 @@
 
         // Story data
         const stories = {
-            'assets/model1': {
-                text: "Nasi Lemak History: Originating from Malaysia, Nasi Lemak is a fragrant rice dish cooked in coconut milk and pandan leaves, often served with sambal, anchovies, peanuts, and cucumber. It has become a beloved dish in Singapore, reflecting the region's Malay heritage.",
+            'assets/model1/3DModel': {
+                text: "Nasi Lemak, a Malay classic, blends coconut rice with spicy sambal, anchovies, and peanuts. Born in villages, it’s now a Singapore favorite. Fun fact: pandan leaves give it that irresistible aroma, perfect for breakfast!",
                 audio: "assets/story/nasi_lemak.mp3"
             },
-            'assets/model2': {
-                text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
+            'assets/model2/3DModel': {
+                text: "Hainanese Chicken Rice, brought by Chinese immigrants, pairs tender chicken with fragrant, broth-cooked rice. Its chili sauce steals the show! Fun fact: the rice alone is so tasty, it’s a dish by itself!",
                 audio: "assets/story/chicken_rice.mp3"
             },
-            'assets/model3': {
-                text: "Nasi Briyani Facts: A flavorful rice dish of Indian origin, Nasi Briyani is popular in Singapore's Indian-Muslim community. It is cooked with aromatic spices like saffron and cardamom, often paired with tender meat or vegetables.",
+            'assets/model3/3DModel': {
+                text: "Nasi Briyani, from Indian-Muslim traders, is rice bursting with saffron and spices. A Little India gem, it’s a festive must. Fun fact: its vibrant color comes from saffron, paired with rich curries!",
                 audio: "assets/story/nasi_briyani.mp3"
             }
         };
@@ -273,20 +273,26 @@
                             spinner.style.display = 'none';
                             const key = `${folder}/${modelName}`;
                             modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
-                            // Play corresponding story
-                            if (audio) {
-                                audio.pause();
-                                audio = null;
-                            }
-                            storyPanel.style.opacity = 0;
-                            setTimeout(() => {
-                                storyPanel.innerText = stories[key].text;
+                            // Play corresponding story with error handling
+                            if (stories[key]) {
+                                if (audio) {
+                                    audio.pause();
+                                    audio = null;
+                                }
+                                storyPanel.style.opacity = 0;
+                                setTimeout(() => {
+                                    storyPanel.innerText = stories[key].text;
+                                    storyPanel.style.opacity = 1;
+                                    audio = new Audio(stories[key].audio);
+                                    audio.play().catch(err => {
+                                        console.warn('Audio play prevented:', err);
+                                    });
+                                }, 1000);
+                            } else {
+                                console.error(`No story found for key: ${key}`);
+                                storyPanel.innerText = "Story not available.";
                                 storyPanel.style.opacity = 1;
-                                audio = new Audio(stories[key].audio);
-                                audio.play().catch(err => {
-                                    console.warn('Audio play prevented:', err);
-                                });
-                            }, 1000);
+                            }
                             console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
                         },
                         (progress) => {
@@ -320,17 +326,23 @@
         // Start story on overlay click
         overlay.addEventListener('click', () => {
             overlay.style.display = 'none';
-            const initialKey = 'assets/nasi_lemak/3DModel';
-            storyPanel.innerText = stories[initialKey].text;
-            storyPanel.style.opacity = 1;
-            audio = new Audio(stories[initialKey].audio);
-            audio.play().catch(err => {
-                console.warn('Audio play prevented:', err);
-            });
+            const initialKey = 'assets/model1/3DModel';
+            if (stories[initialKey]) {
+                storyPanel.innerText = stories[initialKey].text;
+                storyPanel.style.opacity = 1;
+                audio = new Audio(stories[initialKey].audio);
+                audio.play().catch(err => {
+                    console.warn('Audio play prevented:', err);
+                });
+            } else {
+                console.error(`No story found for initial key: ${initialKey}`);
+                storyPanel.innerText = "Story not available.";
+                storyPanel.style.opacity = 1;
+            }
         });
 
         // Load initial model
-        loadModel('assets/nasi_lemak', '3DModel');
+        loadModel('assets/model1', '3DModel');
 
         // Handle window resize
         window.addEventListener('resize', () => {
