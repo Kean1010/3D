@@ -60,10 +60,12 @@
 <div id="startOverlay">Click anywhere to start the story</div>
 
 <!-- Three.js, fflate, FBXLoader, OrbitControls -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r165/three.min.js"></script>
+<script
+
+System: src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/loaders/FBXLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/controls/OrbitControls.js"></script>
 
 <script>
   const stories = [
@@ -88,7 +90,7 @@
   // Three.js scene setup
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-  const renderer = new THREE.WebGLRenderer({antialias:true});
+  const renderer = new THREE.WebGLRenderer({antialias: true});
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
@@ -106,12 +108,33 @@
 
   // Load FBX model
   const loader = new THREE.FBXLoader();
-  loader.load('chicken.fbx', function(fbx) {
-    fbx.scale.set(0.02, 0.02, 0.02); // Adjust scale if needed
-    scene.add(fbx);
-  }, undefined, function(error) {
-    console.error('Error loading FBX:', error);
-  });
+  loader.setPath('assets/textures/'); // Set base path for textures
+  loader.load(
+    'assets/chicken.fbx', // Adjusted path
+    function(fbx) {
+      fbx.scale.set(0.02, 0.02, 0.02);
+      fbx.traverse(function(child) {
+        if (child.isMesh) {
+          console.log('Material:', child.material);
+          if (child.material.map) {
+            console.log('Texture:', child.material.map.image.src);
+          } else {
+            // Fallback: Manually assign texture if not loaded
+            const textureLoader = new THREE.TextureLoader();
+            child.material.map = textureLoader.load('assets/textures/chicken_diffuse.png'); // Adjust texture path
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+      scene.add(fbx);
+    },
+    function(xhr) {
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded'); // Progress feedback
+    },
+    function(error) {
+      console.error('Error loading FBX:', error); // Error handling
+    }
+  );
 
   camera.position.set(0, 1.5, 3);
 
@@ -138,8 +161,7 @@
 
   function playStory(index) {
     if(index >= stories.length) {
-      // Optionally loop or do nothing
-      return;
+      return; // Stop after last story
     }
     fadeOutText(() => {
       fadeInText(stories[index].text);
@@ -170,7 +192,6 @@
     renderer.render(scene, camera);
   }
   animate();
-
 </script>
 
 </body>
