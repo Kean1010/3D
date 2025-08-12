@@ -3,336 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Singapore Chicken Rice 3D Story</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Singapore Chicken Rice Showcase</title>
   <style>
     body {
       margin: 0;
-      overflow-x: hidden;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      font-family: Arial, sans-serif;
+      background-color: #fafafa;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      font-family: 'Inter', sans-serif;
-    }
-    #canvas-container {
-      width: 95vw;
-      height: 70vh;
-      max-width: 1000px;
-      border: 2px solid #4b5e8e;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      height: 100vh;
       overflow: hidden;
-      background: #ffffff10;
+    }
+
+    #viewer-container {
+      flex: 1;
       position: relative;
-      margin-top: 20px;
+      background-color: #fff;
     }
-    canvas {
-      display: block;
-      width: 100% !important;
-      height: 100% !important;
-    }
-    #info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 14px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-    #model-info {
-      margin-top: 10px;
-      color: white;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      text-align: center;
-      cursor: pointer;
-    }
-    #model-selector {
-      margin-top: 20px;
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding-bottom: 20px;
-    }
-    .model-card {
-      width: 100px;
-      height: 100px;
-      background: #ffffff10;
-      border: 2px solid #4b5e8e;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.3s, border-color 0.3s;
-    }
-    .model-card:hover {
-      transform: scale(1.05);
-      border-color: #60a5fa;
-    }
-    .model-card img {
+
+    model-viewer {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      background-color: #fff;
     }
-    #loading-spinner {
+
+    /* Caption box overlay */
+    #caption-box {
       position: absolute;
-      top: 50%;
+      bottom: 10px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #60a5fa;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      display: none;
-    }
-    @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-    @media (max-width: 600px) {
-      #info, #model-info {
-        font-size: 12px;
-        padding: 8px 12px;
-      }
-      #canvas-container {
-        width: 98vw;
-        height: 65vh;
-      }
-      .model-card {
-        width: 80px;
-        height: 80px;
-      }
-    }
-    /* Story Overlay */
-    .story-panel {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.95);
-      color: white;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 1000;
+      transform: translateX(-50%);
+      width: 90%;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 1.4em;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.2);
       text-align: center;
     }
-    .story-panel img {
-      max-width: 300px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .story-panel h2 {
-      font-size: 1.5rem;
-      margin-bottom: 10px;
-    }
-    .story-panel p {
-      max-width: 600px;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .close-btn {
-      background: #ef4444;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
+
+    #caption-title {
+      font-weight: bold;
+      margin-bottom: 6px;
     }
   </style>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <div id="canvas-container">
-    <canvas id="viewer-canvas"></canvas>
-    <div id="loading-spinner"></div>
-    <div id="info">
-      <p class="font-bold">3D Model Viewer (Mobile)</p>
-      <p>Rotate: Swipe with one finger</p>
-      <p>Pan: Swipe with two fingers</p>
-      <p>Zoom: Pinch to zoom</p>
+  <div id="viewer-container">
+    <!-- 3D model -->
+    <model-viewer 
+      id="model" 
+      src="chickenrice.glb" 
+      alt="Singapore Chicken Rice" 
+      camera-controls 
+      auto-rotate 
+      rotation-per-second="15deg"
+      exposure="1"
+      shadow-intensity="1">
+    </model-viewer>
+
+    <!-- Caption overlay -->
+    <div id="caption-box">
+      <div id="caption-title"></div>
+      <div id="caption-text"></div>
     </div>
   </div>
 
-  <div id="model-info">Click to learn the story</div>
-
-  <div id="model-selector">
-    <div class="model-card" data-folder="assets/model1" data-model="3DModel">
-      <img src="thumb1.jpg" alt="Origins">
-    </div>
-    <div class="model-card" data-folder="assets/model2" data-model="3DModel">
-      <img src="thumb2.jpg" alt="Evolution">
-    </div>
-    <div class="model-card" data-folder="assets/model3" data-model="3DModel">
-      <img src="thumb3.jpg" alt="Significance">
-    </div>
-  </div>
-
-  <!-- STORY PANEL -->
-  <div id="story-panel" class="story-panel">
-    <img id="story-image" src="" alt="Story Image">
-    <h2 id="story-title"></h2>
-    <p id="story-text"></p>
-    <button class="close-btn" onclick="closeStory()">Close</button>
-  </div>
-
-  <!-- BACKGROUND MUSIC -->
-  <audio id="bg-music" src="assets/music/bg.mp3" loop></audio>
-  <!-- STORY NARRATION -->
-  <audio id="story-audio" src=""></audio>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script>
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('viewer-canvas') });
-    const container = document.getElementById('canvas-container');
-    renderer.setSize(container.clientWidth, container.clientHeight);
-
-    camera.position.set(0, 1, 1);
-    camera.lookAt(0, 0, 0);
-
-    scene.add(new THREE.AmbientLight(0x404040, 1.5));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    keyLight.position.set(2, 2, 2);
-    scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    fillLight.position.set(-2, 1, 2);
-    scene.add(fillLight);
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    rimLight.position.set(0, 2, -2);
-    scene.add(rimLight);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    const spinner = document.getElementById('loading-spinner');
-    const modelInfo = document.getElementById('model-info');
-
-    const modelData = {
-      'assets/model1/3DModel': {
-        name: 'Origins',
-        desc: 'From Hainan to Singapore – discover the story behind this beloved dish.',
-        image: 'assets/story/origins.jpg',
-        story: `Hainanese chicken rice traces its roots to southern China’s Hainan province, 
-                where it is known as Wenchang chicken. Early Hainanese immigrants brought the dish 
-                to Singapore in the late 19th and early 20th centuries. Traditionally, the chicken 
-                is poached gently to preserve tenderness, then served with rice cooked in the poaching broth.`,
-        audio: 'assets/story/origins.mp3'
+    // Story data: title, text, audio
+    const storySections = [
+      {
+        title: "Origins",
+        text: "Hainanese chicken rice originated from Chinese immigrants from Hainan, China. The dish was adapted in Singapore using local ingredients and techniques, making it lighter and more fragrant.",
+        audio: "origins.mp3"
       },
-      'assets/model2/3DModel': {
-        name: 'Evolution in Singapore',
-        desc: 'How Singapore transformed this classic into its own national icon.',
-        image: 'assets/story/evolution.jpg',
-        story: `In Singapore, the fragrant rice is cooked with chicken stock, garlic, ginger, and pandan leaves. 
-                The vibrant chili sauce — made with red chilies, garlic, ginger, and lime — is a uniquely local twist.
-                From hawker stalls to luxury hotels, each puts their own spin on the recipe.`,
-        audio: 'assets/story/evolution.mp3'
+      {
+        title: "Evolution in Singapore",
+        text: "Over the decades, Singapore's version evolved into a national dish. Poached or roasted chicken is served with fragrant rice cooked in chicken stock, accompanied by chili sauce and ginger paste.",
+        audio: "evolution.mp3"
       },
-      'assets/model3/3DModel': {
-        name: 'Cultural Significance',
-        desc: 'Why chicken rice is more than just food in Singapore.',
-        image: 'assets/story/significance.jpg',
-        story: `Today, chicken rice is celebrated as one of Singapore’s unofficial national dishes. 
-                Affordable, comforting, and found everywhere — it embodies the city’s multicultural heritage. 
-                In 2018, CNN Travel ranked it among the world’s 50 best foods.`,
-        audio: 'assets/story/significance.mp3'
+      {
+        title: "Cultural Significance",
+        text: "Chicken rice is more than a meal — it is part of Singapore's cultural identity, enjoyed in hawker centres and restaurants alike, symbolizing comfort and tradition.",
+        audio: "cultural.mp3"
       }
-    };
+    ];
 
-    const storyPanel = document.getElementById('story-panel');
-    const storyImage = document.getElementById('story-image');
-    const storyTitle = document.getElementById('story-title');
-    const storyText = document.getElementById('story-text');
-    const storyAudio = document.getElementById('story-audio');
-    const bgMusic = document.getElementById('bg-music');
-    let currentObject = null;
-    let currentModelKey = null;
+    const captionTitle = document.getElementById("caption-title");
+    const captionText = document.getElementById("caption-text");
 
-    modelInfo.addEventListener('click', () => {
-      if (currentModelKey && modelData[currentModelKey]) {
-        const story = modelData[currentModelKey];
-        storyImage.src = story.image;
-        storyTitle.textContent = story.name;
-        storyText.textContent = story.story;
-        storyAudio.src = story.audio;
-        storyAudio.play();
-        storyPanel.style.display = 'flex';
-      }
-    });
+    let currentSection = 0;
 
-    function closeStory() {
-      storyPanel.style.display = 'none';
-      storyAudio.pause();
-    }
-    window.closeStory = closeStory;
+    function playSection(index) {
+      if (index >= storySections.length) return;
+      const section = storySections[index];
+      captionTitle.textContent = section.title;
+      captionText.textContent = section.text;
 
-    function loadModel(folder, modelName) {
-      spinner.style.display = 'block';
-      if (currentObject) {
-        scene.remove(currentObject);
-        currentObject = null;
-      }
-      const mtlLoader = new THREE.MTLLoader();
-      mtlLoader.setResourcePath(`${folder}/`);
-      mtlLoader.load(`${folder}/${modelName}.mtl`, (materials) => {
-        materials.preload();
-        const objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials(materials);
-        objLoader.load(`${folder}/${modelName}.obj`, (object) => {
-          object.scale.set(1.5, 1.5, 1.5);
-          const box = new THREE.Box3().setFromObject(object);
-          const center = box.getCenter(new THREE.Vector3());
-          object.position.sub(center);
-          scene.add(object);
-          currentObject = object;
-          spinner.style.display = 'none';
-          currentModelKey = `${folder}/${modelName}`;
-          modelInfo.innerHTML = `<p class="font-bold">${modelData[currentModelKey].name}</p><p>${modelData[currentModelKey].desc}</p>`;
-        });
-      });
+      const audio = new Audio(section.audio);
+      audio.play();
+
+      audio.onended = () => {
+        playSection(index + 1);
+      };
     }
 
-    document.querySelectorAll('.model-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const folder = card.getAttribute('data-folder');
-        const modelName = card.getAttribute('data-model');
-        loadModel(folder, modelName);
-      });
+    // Start playing automatically after short delay (so model loads)
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        playSection(0);
+      }, 1000);
     });
-
-    loadModel('assets/model1', '3DModel');
-
-    window.addEventListener('resize', () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    document.body.addEventListener('click', () => {
-      if (bgMusic.paused) bgMusic.play();
-    }, { once: true });
   </script>
 </body>
 </html>
