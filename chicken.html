@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Singapore Chicken Rice 3D Showcase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Singapore Chicken Rice 3D Showcase (FBX)</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100%;
-      background: #f8f8f8;
+      margin: 0; padding: 0; overflow: hidden; height: 100%; background: #f8f8f8;
       font-family: Arial, sans-serif;
     }
     #container {
@@ -24,14 +20,19 @@
       left: 50%;
       transform: translateX(-50%);
       width: 80%;
+      max-width: 900px;
       background: rgba(0,0,0,0.6);
       color: white;
-      padding: 15px;
+      padding: 15px 25px;
       border-radius: 10px;
-      font-size: 1.1em;
+      font-size: 1.2em;
       line-height: 1.4em;
       text-align: center;
-      pointer-events: none; /* so it won't block model controls */
+      pointer-events: none; /* let 3D controls work */
+      opacity: 1;
+      transition: opacity 1s ease-in-out;
+      user-select: none;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -39,13 +40,12 @@
   <div id="container"></div>
   <div id="storyPanel"></div>
 
-  <!-- Three.js + GLTF Loader -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Three.js and FBXLoader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/FBXLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
-    // Story data (text + audio files)
     const stories = [
       {
         text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
@@ -71,9 +71,9 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
-    // Lighting
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    scene.add(light);
+    // Lights
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(5, 10, 7.5);
@@ -83,41 +83,65 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Load model (keep your original filename here)
-    const loader = new THREE.GLTFLoader();
-    loader.load('chickenrice.glb', function(gltf) {
-      const model = gltf.scene;
-      model.scale.set(2, 2, 2);
-      scene.add(model);
+    // Load FBX model
+    const loader = new THREE.FBXLoader();
+    loader.load('Hainanese_Chicken_Rice.fbx', function(fbx) {
+      fbx.scale.set(0.02, 0.02, 0.02);  // Adjust scale as needed
+      scene.add(fbx);
     }, undefined, function(error) {
-      console.error(error);
+      console.error('Error loading FBX:', error);
     });
 
     camera.position.set(0, 1.5, 3);
 
-    // Handle resizing
+    // Handle window resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Auto-play story + audio
+    // Audio & Story sequence with fade effect on captions
     let currentIndex = 0;
-    function playStory(index) {
-      if (index >= stories.length) return;
+    let audio = null;
 
-      storyPanel.innerHTML = stories[index].text;
-      const audio = new Audio(stories[index].audio);
-      audio.play();
-      audio.onended = () => {
-        playStory(index + 1);
-      };
+    function fadeOutText(callback) {
+      storyPanel.style.opacity = 0;
+      setTimeout(callback, 1000);
     }
 
-    // Start sequence automatically
+    function fadeInText(text) {
+      storyPanel.innerText = text;
+      storyPanel.style.opacity = 1;
+    }
+
+    function playStory(index) {
+      if (index >= stories.length) {
+        // End of story, you could loop or stop
+        return;
+      }
+      fadeOutText(() => {
+        fadeInText(stories[index].text);
+        if (audio) {
+          audio.pause();
+          audio = null;
+        }
+        audio = new Audio(stories[index].audio);
+        audio.play();
+        audio.onended = () => {
+          playStory(index + 1);
+        };
+      });
+    }
+
+    // Start automatically on page load
     window.addEventListener('load', () => {
-      playStory(0);
+      fadeInText(stories[0].text);
+      audio = new Audio(stories[0].audio);
+      audio.play();
+      audio.onended = () => {
+        playStory(1);
+      };
     });
 
     // Render loop
