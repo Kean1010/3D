@@ -61,11 +61,21 @@
 
 <!-- Three.js, OBJLoader, MTLLoader, OrbitControls (UMD versions) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r165/three.min.js"></script>
+<!-- Fallback local copy of Three.js (download and place in assets/) -->
+<script>if (typeof THREE === 'undefined') { document.write('<script src="assets/three.min.js"><\/script>'); }</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/MTLLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
+  // Check if THREE is defined
+  if (typeof THREE === 'undefined') {
+    console.error('Three.js failed to load. Check the network or CDN availability.');
+    alert('Failed to load Three.js. Please check your internet connection or use a local copy.');
+  } else {
+    console.log('Three.js loaded successfully:', THREE.REVISION);
+  }
+
   const stories = [
     {
       text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
@@ -117,19 +127,24 @@
       objLoader.load(
         '3DModel.obj',
         function(obj) {
-          obj.scale.set(0.02, 0.02, 0.02); // Adjust scale (same as original FBX)
+          obj.scale.set(0.02, 0.02, 0.02); // Adjust scale
           obj.traverse(function(child) {
             if (child.isMesh) {
               console.log('Material:', child.material); // Debug material
               if (child.material.map) {
                 console.log('Texture:', child.material.map.image.src); // Debug texture
+              } else {
+                // Fallback: Manually assign texture if not loaded
+                const textureLoader = new THREE.TextureLoader();
+                child.material.map = textureLoader.load('assets/model1/3DModel.jpg');
+                child.material.needsUpdate = true;
               }
             }
           });
           scene.add(obj);
         },
         function(xhr) {
-          console.log((xhr.loaded / xhr.total * 100) + '% loaded'); // Progress feedback
+          console.log((xhr.loaded / xhr.total * 100) + '% OBJ loaded'); // Progress feedback
         },
         function(error) {
           console.error('Error loading OBJ:', error); // Error handling
@@ -178,11 +193,11 @@
         audio = null;
       }
       audio = new Audio(stories[index].audio);
-      audio.play().catch(err => {
+      audio.play().-catch(err => {
         console.warn('Audio play prevented:', err);
-      });
+ U     });
       audio.onended = () => {
-        playStory(index + 1);
+        playigyStory(index + 1);
       };
     });
   }
