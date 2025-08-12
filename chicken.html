@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Singapore Chicken Rice 3D Showcase v2.0</title>
+    <title>Singapore Dishes 3D Showcase v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -167,14 +167,14 @@
     </div>
     <div id="model-info"></div>
     <div id="model-selector">
-        <div class="model-card" data-folder="assets/model1" data-model="3DModel" data-image="thumb1.jpg" data-name="Model 1" data-desc="A classic 3D sculpture">
-            <img src="thumb1.jpg" alt="Model 1">
+        <div class="model-card" data-folder="assets/nasi_lemak" data-model="3DModel" data-image="nasi_lemak.jpg" data-name="Nasi Lemak">
+            <img src="nasi_lemak.jpg" alt="Nasi Lemak">
         </div>
-        <div class="model-card" data-folder="assets/model2" data-model="3DModel" data-image="thumb2.jpg" data-name="Model 2" data-desc="A modern 3D artifact">
-            <img src="thumb2.jpg" alt="Model 2">
+        <div class="model-card" data-folder="assets/chicken_rice" data-model="3DModel" data-image="chicken_rice.jpg" data-name="Chicken Rice">
+            <img src="chicken_rice.jpg" alt="Chicken Rice">
         </div>
-        <div class="model-card" data-folder="assets/model3" data-model="3DModel" data-image="thumb3.jpg" data-name="Model 3" data-desc="A modern 3D artifact">
-            <img src="thumb3.jpg" alt="Model 3">
+        <div class="model-card" data-folder="assets/nasi_briyani" data-model="3DModel" data-image="nasi_briyani.jpg" data-name="Nasi Briyani">
+            <img src="nasi_briyani.jpg" alt="Nasi Briyani">
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -191,20 +191,20 @@
         }
 
         // Story data
-        const stories = [
-            {
+        const stories = {
+            'assets/nasi_lemak/3DModel': {
+                text: "Nasi Lemak History: Originating from Malaysia, Nasi Lemak is a fragrant rice dish cooked in coconut milk and pandan leaves, often served with sambal, anchovies, peanuts, and cucumber. It has become a beloved dish in Singapore, reflecting the region's Malay heritage.",
+                audio: "assets/story/nasi_lemak.mp3"
+            },
+            'assets/chicken_rice/3DModel': {
                 text: "Origins: Hainanese chicken rice was brought to Singapore by Chinese immigrants from Hainan, China. The dish evolved from the traditional 'Wenchang chicken' of Hainan, adapted to local tastes and ingredients.",
-                audio: "assets/story/origins.mp3"
+                audio: "assets/story/chicken_rice.mp3"
             },
-            {
-                text: "Evolution in Singapore: Over the decades, chicken rice became a national icon. Hawkers developed their own styles, perfecting fragrant rice cooked in chicken broth and tender poached chicken served with chili sauce.",
-                audio: "assets/story/evolution.mp3"
-            },
-            {
-                text: "Cultural Significance: Today, chicken rice is more than food — it is a comfort dish, a symbol of Singapore's multicultural identity, and a must-try for visitors from around the world.",
-                audio: "assets/story/cultural.mp3"
+            'assets/nasi_briyani/3DModel': {
+                text: "Nasi Briyani Facts: A flavorful rice dish of Indian origin, Nasi Briyani is popular in Singapore's Indian-Muslim community. It is cooked with aromatic spices like saffron and cardamom, often paired with tender meat or vegetables.",
+                audio: "assets/story/nasi_briyani.mp3"
             }
-        ];
+        };
 
         // Scene setup
         const scene = new THREE.Scene();
@@ -243,23 +243,6 @@
         let currentObject = null;
         const spinner = document.getElementById('loading-spinner');
         let audio = null;
-        let currentIndex = 0;
-
-        // Model metadata
-        const modelData = {
-            'assets/model1/3DModel': {
-                name: 'Power Bank',
-                desc: 'Not your usual Bank but a 10,000mAH Power Bank that juice up your device from 0 to 100%'
-            },
-            'assets/model2/3DModel': {
-                name: 'DeadPool',
-                desc: 'A Deadpool Sculpture from the movie DeadPool'
-            },
-            'assets/model3/3DModel': {
-                name: 'Spiderman',
-                desc: 'A Spiderman Sculpture from the movie Spiderman'
-            }
-        };
 
         // Load model function
         function loadModel(folder, modelName) {
@@ -289,7 +272,21 @@
                             currentObject = object;
                             spinner.style.display = 'none';
                             const key = `${folder}/${modelName}`;
-                            modelInfo.innerHTML = `<p class="font-bold">${modelData[key].name}</p><p>${modelData[key].desc}</p>`;
+                            modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
+                            // Play corresponding story
+                            if (audio) {
+                                audio.pause();
+                                audio = null;
+                            }
+                            storyPanel.style.opacity = 0;
+                            setTimeout(() => {
+                                storyPanel.innerText = stories[key].text;
+                                storyPanel.style.opacity = 1;
+                                audio = new Audio(stories[key].audio);
+                                audio.play().catch(err => {
+                                    console.warn('Audio play prevented:', err);
+                                });
+                            }, 1000);
                             console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
                         },
                         (progress) => {
@@ -311,44 +308,6 @@
             );
         }
 
-        // Story playback functions
-        function fadeOutText(callback) {
-            storyPanel.style.opacity = 0;
-            setTimeout(callback, 1000);
-        }
-
-        function fadeInText(text) {
-            storyPanel.innerText = text;
-            storyPanel.style.opacity = 1;
-        }
-
-        function playStory(index) {
-            if (index >= stories.length) {
-                storyPanel.style.opacity = 0; // Hide panel after last story
-                return;
-            }
-            fadeOutText(() => {
-                fadeInText(stories[index].text);
-                if (audio) {
-                    audio.pause();
-                    audio = null;
-                }
-                audio = new Audio(stories[index].audio);
-                audio.play().catch(err => {
-                    console.warn('Audio play prevented:', err);
-                });
-                audio.onended = () => {
-                    playStory(index + 1);
-                };
-            });
-        }
-
-        // Start story on overlay click
-        overlay.addEventListener('click', () => {
-            overlay.style.display = 'none';
-            playStory(0);
-        });
-
         // Model selector
         document.querySelectorAll('.model-card').forEach(card => {
             card.addEventListener('click', () => {
@@ -358,8 +317,20 @@
             });
         });
 
+        // Start story on overlay click
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            const initialKey = 'assets/nasi_lemak/3DModel';
+            storyPanel.innerText = stories[initialKey].text;
+            storyPanel.style.opacity = 1;
+            audio = new Audio(stories[initialKey].audio);
+            audio.play().catch(err => {
+                console.warn('Audio play prevented:', err);
+            });
+        });
+
         // Load initial model
-        loadModel('assets/model1', '3DModel');
+        loadModel('assets/nasi_lemak', '3DModel');
 
         // Handle window resize
         window.addEventListener('resize', () => {
