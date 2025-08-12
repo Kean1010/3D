@@ -244,6 +244,15 @@
         const spinner = document.getElementById('loading-spinner');
         let audio = null;
 
+        // Function to stop current audio
+        function stopCurrentAudio() {
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0; // Reset audio to start
+                audio = null;
+            }
+        }
+
         // Load model function
         function loadModel(folder, modelName) {
             spinner.style.display = 'block';
@@ -251,6 +260,7 @@
                 scene.remove(currentObject);
                 currentObject = null;
             }
+            stopCurrentAudio(); // Stop any playing audio before loading new model
 
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.setResourcePath(`${folder}/`);
@@ -275,10 +285,6 @@
                             modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
                             // Play corresponding story with error handling
                             if (stories[key]) {
-                                if (audio) {
-                                    audio.pause();
-                                    audio = null;
-                                }
                                 storyPanel.style.opacity = 0;
                                 setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
