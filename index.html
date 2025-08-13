@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Singapore Dishes 3D Showcase v2.0</title>
+    <title>ITE Forum Red Dot Rewind</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -160,7 +160,7 @@
         <div id="startOverlay">Click anywhere to start the story</div>
     </div>
     <div id="info">
-        <p class="font-bold">3D Model Viewer (Mobile)</p>
+        <p class="font-bold">Red Dot Rewind 3D (Mobile)</p>
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
@@ -253,7 +253,7 @@
             }
         }
 
-        // Load model function (modified to adjust scale for models 2 and 3, rotate model 3, and control audio)
+        // Load model function (modified to adjust scale, rotation, and position for model 3)
         function loadModel(folder, modelName, playAudio = false) {
             spinner.style.display = 'block';
             if (currentObject) {
@@ -283,9 +283,10 @@
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
                             object.position.sub(center);
-                            // Rotate the third model (Nasi Briyani) to fix upside-down orientation
+                            // Rotate and adjust position for the third model (Nasi Briyani)
                             if (folder === 'assets/model3') {
                                 object.rotation.x = Math.PI; // Rotate 180 degrees around X-axis
+                                object.position.y -= 0.5; // Shift downward to fix "too high up" issue
                             }
                             scene.add(object);
                             currentObject = object;
@@ -366,7 +367,9 @@
         });
 
         // Start story on overlay click
+        console.log('Overlay click listener attached'); // Debug log
         overlay.addEventListener('click', () => {
+            console.log('Overlay clicked'); // Debug log
             overlay.style.display = 'none';
             loadModel('assets/model1', '3DModel', true); // Load initial model with audio
             enableModelSelectors();
