@@ -164,7 +164,7 @@
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
-        <p>Log Position: Press 'P' key</p> <!-- Added instruction -->
+        <p>Log Position: Press 'P' key</p>
     </div>
     <div id="model-info"></div>
     <div id="model-selector">
@@ -247,7 +247,13 @@
         let currentKey = null;
 
         // Store camera states per model for individual controls
-        const cameraStates = {};
+        const cameraStates = {
+            'assets/model3/3DModel': {
+                position: new THREE.Vector3(0.00003400265850752864, 34.01351148550705, -8.591728556475325e-7),
+                quaternion: new THREE.Quaternion(-0.49364442504905587, 0.5062758084758375, 0.5062753022002824, 0.4936449186937278),
+                target: new THREE.Vector3(0, 0, 0)
+            }
+        };
 
         // Function to save current camera state
         function saveCameraState(key) {
