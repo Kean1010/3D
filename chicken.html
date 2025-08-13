@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Red Dot Rewind 3D viewer</title>
+    <title>Singapore Dishes 3D Showcase v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -160,7 +160,7 @@
         <div id="startOverlay">Click anywhere to start the story</div>
     </div>
     <div id="info">
-        <p class="font-bold">3D Singapore Food Viewer</p>
+        <p class="font-bold">3D Model Viewer (Mobile)</p>
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
@@ -253,8 +253,8 @@
             }
         }
 
-        // Load model function
-        function loadModel(folder, modelName) {
+        // Load model function (modified to skip audio unless explicitly triggered)
+        function loadModel(folder, modelName, playAudio = false) {
             spinner.style.display = 'block';
             if (currentObject) {
                 scene.remove(currentObject);
@@ -283,8 +283,8 @@
                             spinner.style.display = 'none';
                             const key = `${folder}/${modelName}`;
                             modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
-                            // Play corresponding story with error handling
-                            if (stories[key]) {
+                            // Only play audio if explicitly requested
+                            if (playAudio && stories[key]) {
                                 storyPanel.style.opacity = 0;
                                 setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
@@ -293,6 +293,12 @@
                                     audio.play().catch(err => {
                                         console.warn('Audio play prevented:', err);
                                     });
+                                }, 1000);
+                            } else if (stories[key]) {
+                                storyPanel.style.opacity = 0;
+                                setTimeout(() => {
+                                    storyPanel.innerText = stories[key].text;
+                                    storyPanel.style.opacity = 1;
                                 }, 1000);
                             } else {
                                 console.error(`No story found for key: ${key}`);
@@ -327,42 +333,28 @@
                 const folder = card.getAttribute('data-folder');
                 const modelName = card.getAttribute('data-model');
                 card.addEventListener('click', () => {
-                    loadModel(folder, modelName);
+                    loadModel(folder, modelName, true); // Play audio on model card click
                 });
-                // Restore cursor and hover effect
                 card.style.cursor = 'pointer';
-                card.classList.add('model-card'); // Ensure hover styles are applied
+                card.classList.add('model-card');
             });
         }
 
         // Initially disable model selectors
         modelCards.forEach(card => {
             card.style.cursor = 'not-allowed';
-            card.classList.remove('model-card'); // Remove hover effect
+            card.classList.remove('model-card');
         });
 
         // Start story on overlay click
         overlay.addEventListener('click', () => {
             overlay.style.display = 'none';
-            const initialKey = 'assets/model1/3DModel';
-            if (stories[initialKey]) {
-                storyPanel.innerText = stories[initialKey].text;
-                storyPanel.style.opacity = 1;
-                audio = new Audio(stories[initialKey].audio);
-                audio.play().catch(err => {
-                    console.warn('Audio play prevented:', err);
-                });
-            } else {
-                console.error(`No story found for initial key: ${initialKey}`);
-                storyPanel.innerText = "Story not available.";
-                storyPanel.style.opacity = 1;
-            }
-            // Enable model selectors after overlay is clicked
+            loadModel('assets/model1', '3DModel', true); // Play audio on overlay click
             enableModelSelectors();
         });
 
-        // Load initial model
-        loadModel('assets/model1', '3DModel');
+        // Load initial model without audio
+        loadModel('assets/model1', '3DModel', false);
 
         // Handle window resize
         window.addEventListener('resize', () => {
