@@ -243,8 +243,9 @@
         const overlay = document.getElementById('startOverlay');
         let currentObject = null;
         const spinner = document.getElementById('loading-spinner');
-        let audio = null; // Single audio instance to manage all sounds
+        let audio = null;
         let currentKey = null;
+        let timeoutId = null; // To track and clear setTimeout
 
         // Store camera states per model for individual controls
         const cameraStates = {
@@ -294,7 +295,7 @@
             if (audio) {
                 audio.pause();
                 audio.currentTime = 0;
-                audio = null; // Reset audio to allow a new instance
+                audio = null;
             }
         }
 
@@ -306,12 +307,18 @@
             saveCameraState(currentKey);
             currentKey = key;
 
+            // Clear any pending timeout to prevent old audio/text updates
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            stopCurrentAudio(); // Stop any playing audio immediately
+
             spinner.style.display = 'block';
             if (currentObject) {
                 scene.remove(currentObject);
                 currentObject = null;
             }
-            stopCurrentAudio(); // Stop any playing audio immediately
 
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.setResourcePath(`${folder}/`);
@@ -352,20 +359,21 @@
                             modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
                             if (playAudio && stories[key]) {
                                 storyPanel.style.opacity = 0;
-                                setTimeout(() => {
+                                timeoutId = setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
                                     storyPanel.style.opacity = 1;
-                                    // Only create new audio if no current audio exists
                                     if (!audio) {
                                         audio = new Audio(stories[key].audio);
                                         audio.play().catch(err => console.warn('Audio play prevented:', err));
                                     }
+                                    timeoutId = null; // Clear timeoutId after execution
                                 }, 1000);
                             } else if (stories[key]) {
                                 storyPanel.style.opacity = 0;
-                                setTimeout(() => {
+                                timeoutId = setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
                                     storyPanel.style.opacity = 1;
+                                    timeoutId = null; // Clear timeoutId after execution
                                 }, 1000);
                             } else {
                                 console.error(`No story found for key: ${key}`);
