@@ -214,7 +214,7 @@
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
-        // Camera position
+        // Camera position (initial default)
         camera.position.set(0, 1, 1);
         camera.lookAt(0, 0, 0);
 
@@ -243,24 +243,60 @@
         let currentObject = null;
         const spinner = document.getElementById('loading-spinner');
         let audio = null;
+        let currentKey = null;
+
+        // Store camera states per model for individual controls
+        const cameraStates = {};
+
+        // Function to save current camera state
+        function saveCameraState(key) {
+            if (key) {
+                cameraStates[key] = {
+                    position: camera.position.clone(),
+                    quaternion: camera.quaternion.clone(),
+                    target: controls.target.clone()
+                };
+            }
+        }
+
+        // Function to restore camera state or reset to default
+        function restoreCameraState(key) {
+            if (cameraStates[key]) {
+                const state = cameraStates[key];
+                camera.position.copy(state.position);
+                camera.quaternion.copy(state.quaternion);
+                controls.target.copy(state.target);
+            } else {
+                camera.position.set(0, 1, 1);
+                controls.target.set(0, 0, 0);
+                camera.lookAt(0, 0, 0);
+            }
+            controls.update();
+        }
 
         // Function to stop current audio
         function stopCurrentAudio() {
             if (audio) {
                 audio.pause();
-                audio.currentTime = 0; // Reset audio to start
+                audio.currentTime = 0;
                 audio = null;
             }
         }
 
-        // Load model function (modified to set position for model 3)
+        // Load model function (updated for centering and camera state)
         function loadModel(folder, modelName, playAudio = false) {
+            const key = `${folder}/${modelName}`;
+
+            // Save state of previous model before switching
+            saveCameraState(currentKey);
+            currentKey = key;
+
             spinner.style.display = 'block';
             if (currentObject) {
                 scene.remove(currentObject);
                 currentObject = null;
             }
-            stopCurrentAudio(); // Stop any playing audio before loading new model
+            stopCurrentAudio();
 
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.setResourcePath(`${folder}/`);
@@ -268,7 +304,6 @@
                 `${folder}/${modelName}.mtl`,
                 (materials) => {
                     materials.preload();
-                    console.log(`MTL loaded for ${folder}/${modelName}:`, materials);
                     const objLoader = new THREE.OBJLoader();
                     objLoader.setMaterials(materials);
                     objLoader.load(
@@ -276,33 +311,38 @@
                         (object) => {
                             // Adjust scale based on model
                             if (folder === 'assets/model2' || folder === 'assets/model3') {
-                                object.scale.set(1.0, 1.0, 1.0); // Smaller scale for models 2 and 3
+                                object.scale.set(1.0, 1.0, 1.0);
                             } else {
-                                object.scale.set(1.5, 1.5, 1.5); // Default scale for model 1
+                                object.scale.set(1.5, 1.5, 1.5);
                             }
+
+                            // Apply model-specific transformations FIRST
+                            if (folder === 'assets/model3') {
+                                object.rotation.x = Math.PI; // 180-degree rotation
+                                // Add small Y-offset to adjust for visual alignment (tweak as needed)
+                                object.position.y -= 5; // Adjust this value based on your model's needs
+                            }
+
+                            // Compute bounding box and center AFTER all transformations
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
                             object.position.sub(center);
-                            // Rotate and set position for the third model (Nasi Briyani)
-                            if (folder === 'assets/model3') {
-                                object.rotation.x = Math.PI; // Rotate 180 degrees around X-axis
-                                object.position.y = -20.898; // Set y position to align properly
-                            }
+
                             scene.add(object);
                             currentObject = object;
                             spinner.style.display = 'none';
-                            const key = `${folder}/${modelName}`;
+
+                            // Restore camera state for this model
+                            restoreCameraState(key);
+
                             modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
-                            // Only play audio if explicitly requested
                             if (playAudio && stories[key]) {
                                 storyPanel.style.opacity = 0;
                                 setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
                                     storyPanel.style.opacity = 1;
                                     audio = new Audio(stories[key].audio);
-                                    audio.play().catch(err => {
-                                        console.warn('Audio play prevented:', err);
-                                    });
+                                    audio.play().catch(err => console.warn('Audio play prevented:', err));
                                 }, 1000);
                             } else if (stories[key]) {
                                 storyPanel.style.opacity = 0;
@@ -315,7 +355,6 @@
                                 storyPanel.innerText = "Story not available.";
                                 storyPanel.style.opacity = 1;
                             }
-                            console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
                         },
                         (progress) => {
                             console.log(`OBJ loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
@@ -353,7 +392,7 @@
                 const folder = card.getAttribute('data-folder');
                 const modelName = card.getAttribute('data-model');
                 card.addEventListener('click', () => {
-                    loadModel(folder, modelName, true); // Play audio on model card click
+                    loadModel(folder, modelName, true);
                 });
                 card.style.cursor = 'pointer';
                 card.classList.add('model-card');
@@ -367,11 +406,11 @@
         });
 
         // Start story on overlay click
-        console.log('Overlay click listener attached'); // Debug log
+        console.log('Overlay click listener attached');
         overlay.addEventListener('click', () => {
-            console.log('Overlay clicked'); // Debug log
+            console.log('Overlay clicked');
             overlay.style.display = 'none';
-            loadModel('assets/model1', '3DModel', true); // Load initial model with audio
+            loadModel('assets/model1', '3DModel', true);
             enableModelSelectors();
         });
 
