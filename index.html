@@ -243,7 +243,7 @@
         const overlay = document.getElementById('startOverlay');
         let currentObject = null;
         const spinner = document.getElementById('loading-spinner');
-        let audio = null;
+        let audio = null; // Single audio instance to manage all sounds
         let currentKey = null;
 
         // Store camera states per model for individual controls
@@ -289,12 +289,12 @@
             console.log('Target:', controls.target);
         }
 
-        // Function to stop current audio
+        // Function to stop and reset the current audio
         function stopCurrentAudio() {
             if (audio) {
                 audio.pause();
                 audio.currentTime = 0;
-                audio = null;
+                audio = null; // Reset audio to allow a new instance
             }
         }
 
@@ -311,7 +311,7 @@
                 scene.remove(currentObject);
                 currentObject = null;
             }
-            stopCurrentAudio();
+            stopCurrentAudio(); // Stop any playing audio immediately
 
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.setResourcePath(`${folder}/`);
@@ -355,8 +355,11 @@
                                 setTimeout(() => {
                                     storyPanel.innerText = stories[key].text;
                                     storyPanel.style.opacity = 1;
-                                    audio = new Audio(stories[key].audio);
-                                    audio.play().catch(err => console.warn('Audio play prevented:', err));
+                                    // Only create new audio if no current audio exists
+                                    if (!audio) {
+                                        audio = new Audio(stories[key].audio);
+                                        audio.play().catch(err => console.warn('Audio play prevented:', err));
+                                    }
                                 }, 1000);
                             } else if (stories[key]) {
                                 storyPanel.style.opacity = 0;
