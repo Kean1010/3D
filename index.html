@@ -164,6 +164,7 @@
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
+        <p>Log Position: Press 'P' key</p> <!-- Added instruction -->
     </div>
     <div id="model-info"></div>
     <div id="model-selector">
@@ -274,6 +275,14 @@
             controls.update();
         }
 
+        // Function to log current camera state to console
+        function logCameraState() {
+            console.log('Current Camera State:');
+            console.log('Position:', camera.position);
+            console.log('Quaternion:', camera.quaternion);
+            console.log('Target:', controls.target);
+        }
+
         // Function to stop current audio
         function stopCurrentAudio() {
             if (audio) {
@@ -283,7 +292,7 @@
             }
         }
 
-        // Load model function (updated for centering and camera state)
+        // Load model function
         function loadModel(folder, modelName, playAudio = false) {
             const key = `${folder}/${modelName}`;
 
@@ -316,14 +325,13 @@
                                 object.scale.set(1.5, 1.5, 1.5);
                             }
 
-                            // Apply model-specific transformations FIRST
+                            // Apply model-specific transformations
                             if (folder === 'assets/model3') {
                                 object.rotation.x = Math.PI; // 180-degree rotation
-                                // Add small Y-offset to adjust for visual alignment (tweak as needed)
-                                object.position.y -= 5; // Adjust this value based on your model's needs
+                                object.position.y -= 5; // Small Y-offset for alignment
                             }
 
-                            // Compute bounding box and center AFTER all transformations
+                            // Compute bounding box and center
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
                             object.position.sub(center);
@@ -421,6 +429,13 @@
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height);
+        });
+
+        // Add key press event to log camera state
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'p' || event.key === 'P') {
+                logCameraState();
+            }
         });
 
         // Animation loop
