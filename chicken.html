@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITE College West Red Dot Rewind</title>
+    <title>Singapore Dishes 3D Showcase v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -160,7 +160,7 @@
         <div id="startOverlay">Click anywhere to start the story</div>
     </div>
     <div id="info">
-        <p class="font-bold">Red Dot Rewind 3D (Mobile)</p>
+        <p class="font-bold">3D Model Viewer (Mobile)</p>
         <p>Rotate: Swipe with one finger</p>
         <p>Pan: Swipe with two fingers</p>
         <p>Zoom: Pinch to zoom</p>
@@ -283,4 +283,111 @@
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
                             object.position.sub(center);
-                            // Rotate the third model (Nasi Briyani
+                            // Rotate the third model (Nasi Briyani) to fix upside-down orientation
+                            if (folder === 'assets/model3') {
+                                object.rotation.x = Math.PI; // Rotate 180 degrees around X-axis
+                            }
+                            scene.add(object);
+                            currentObject = object;
+                            spinner.style.display = 'none';
+                            const key = `${folder}/${modelName}`;
+                            modelInfo.innerHTML = `<p class="font-bold">${document.querySelector(`[data-folder="${folder}"]`).getAttribute('data-name')}</p>`;
+                            // Only play audio if explicitly requested
+                            if (playAudio && stories[key]) {
+                                storyPanel.style.opacity = 0;
+                                setTimeout(() => {
+                                    storyPanel.innerText = stories[key].text;
+                                    storyPanel.style.opacity = 1;
+                                    audio = new Audio(stories[key].audio);
+                                    audio.play().catch(err => {
+                                        console.warn('Audio play prevented:', err);
+                                    });
+                                }, 1000);
+                            } else if (stories[key]) {
+                                storyPanel.style.opacity = 0;
+                                setTimeout(() => {
+                                    storyPanel.innerText = stories[key].text;
+                                    storyPanel.style.opacity = 1;
+                                }, 1000);
+                            } else {
+                                console.error(`No story found for key: ${key}`);
+                                storyPanel.innerText = "Story not available.";
+                                storyPanel.style.opacity = 1;
+                            }
+                            console.log(`OBJ loaded for ${folder}/${modelName}:`, object);
+                        },
+                        (progress) => {
+                            console.log(`OBJ loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                        },
+                        (error) => {
+                            console.error(`Error loading ${folder}/${modelName}.obj:`, error);
+                            spinner.style.display = 'none';
+                            storyPanel.style.opacity = 0;
+                            setTimeout(() => {
+                                storyPanel.innerText = `Failed to load model: ${error.message}. Please check file paths.`;
+                                storyPanel.style.opacity = 1;
+                            }, 1000);
+                        }
+                    );
+                },
+                (progress) => {
+                    console.log(`MTL loading progress for ${folder}/${modelName}: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                },
+                (error) => {
+                    console.error(`Error loading ${folder}/${modelName}.mtl:`, error);
+                    spinner.style.display = 'none';
+                    storyPanel.style.opacity = 0;
+                    setTimeout(() => {
+                        storyPanel.innerText = `Failed to load materials: ${error.message}. Please check file paths.`;
+                        storyPanel.style.opacity = 1;
+                    }, 1000);
+                }
+            );
+        }
+
+        // Model selector setup
+        const modelCards = document.querySelectorAll('.model-card');
+        function enableModelSelectors() {
+            modelCards.forEach(card => {
+                const folder = card.getAttribute('data-folder');
+                const modelName = card.getAttribute('data-model');
+                card.addEventListener('click', () => {
+                    loadModel(folder, modelName, true); // Play audio on model card click
+                });
+                card.style.cursor = 'pointer';
+                card.classList.add('model-card');
+            });
+        }
+
+        // Initially disable model selectors
+        modelCards.forEach(card => {
+            card.style.cursor = 'not-allowed';
+            card.classList.remove('model-card');
+        });
+
+        // Start story on overlay click
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            loadModel('assets/model1', '3DModel', true); // Load initial model with audio
+            enableModelSelectors();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
