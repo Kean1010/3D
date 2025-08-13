@@ -241,7 +241,6 @@
         const storyPanel = document.getElementById('storyPanel');
         const overlay = document.getElementById('startOverlay');
         let currentObject = null;
-        let currentModelFolder = null; // Track current model folder
         const spinner = document.getElementById('loading-spinner');
         let audio = null;
 
@@ -254,7 +253,7 @@
             }
         }
 
-        // Load model function (modified to log position for model 3)
+        // Load model function (modified to set position for model 3)
         function loadModel(folder, modelName, playAudio = false) {
             spinner.style.display = 'block';
             if (currentObject) {
@@ -262,7 +261,6 @@
                 currentObject = null;
             }
             stopCurrentAudio(); // Stop any playing audio before loading new model
-            currentModelFolder = folder; // Update current model folder
 
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.setResourcePath(`${folder}/`);
@@ -285,12 +283,10 @@
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
                             object.position.sub(center);
-                            // Rotate the third model (Nasi Briyani)
+                            // Rotate and set position for the third model (Nasi Briyani)
                             if (folder === 'assets/model3') {
                                 object.rotation.x = Math.PI; // Rotate 180 degrees around X-axis
-                                // Log initial position
-                                console.log(`Model 3 (Nasi Briyani) initial position: x=${object.position.x.toFixed(3)}, y=${object.position.y.toFixed(3)}, z=${object.position.z.toFixed(3)}`);
-                                console.log('Use Up/Down arrow keys to adjust Model 3 y-position. Check console for new position values.');
+                                object.position.y = -20.898; // Set y position to align properly
                             }
                             scene.add(object);
                             currentObject = object;
@@ -377,23 +373,6 @@
             overlay.style.display = 'none';
             loadModel('assets/model1', '3DModel', true); // Load initial model with audio
             enableModelSelectors();
-        });
-
-        // Keydown event listener for adjusting Model 3 position
-        document.addEventListener('keydown', (event) => {
-            if (currentModelFolder === 'assets/model3' && currentObject) {
-                let changed = false;
-                if (event.key === 'ArrowUp') {
-                    currentObject.position.y += 0.1; // Move up
-                    changed = true;
-                } else if (event.key === 'ArrowDown') {
-                    currentObject.position.y -= 0.1; // Move down
-                    changed = true;
-                }
-                if (changed) {
-                    console.log(`Model 3 new position: x=${currentObject.position.x.toFixed(3)}, y=${currentObject.position.y.toFixed(3)}, z=${currentObject.position.z.toFixed(3)}`);
-                }
-            }
         });
 
         // Handle window resize
